@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import type { RootState, AppDispatch } from '../../store/store';
+import type { RootState, AppDispatch } from '../../store/store.ts';
 import { 
   FaPlus, 
   FaEdit, 
@@ -29,7 +29,7 @@ import {
 import {
   fetchCompanies,
   clearError as clearCompanyError
-} from '../../store/slices/companySlice';
+} from '../../store/slices/CompanySlice';
 
 interface Project {
   id: number;

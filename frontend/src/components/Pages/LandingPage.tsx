@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import type { RootState } from '../../store/store';
-import { loginUser } from '../../store/slices/authSlice';
+import { loginUser } from '../../store/slices/AuthSlice';
 import { FaEnvelope, FaLock, FaSignInAlt, FaExclamationTriangle, FaTimes } from 'react-icons/fa';
 import './LandingPage.css'
 
