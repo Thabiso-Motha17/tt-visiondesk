@@ -1,21 +1,12 @@
-.loading-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 50vh;
+.task-management {
+  padding: 0;
 }
 
-.loading-spinner {
-  font-size: 1.2rem;
-  color: #667eea;
-}
-
-/* Enhanced loading states */
 .loading {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 200px;
+  height: 50vh;
   font-size: 1.2rem;
   color: #666;
 }
@@ -35,4 +26,3 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-

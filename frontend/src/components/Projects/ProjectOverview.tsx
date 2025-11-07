@@ -5,7 +5,6 @@ import AdminProjectPage from './AdminProjectPage';
 import DeveloperProjectPage from './DeveloperProjectPage';
 import ClientProjectPage from './ClientProjectPage';
 import './ProjectOverview.css';
-import PageNotFound from '../Pages/PageNotFound';
 
 const ProjectOverview: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -20,8 +19,6 @@ const ProjectOverview: React.FC = () => {
         return <DeveloperProjectPage />;
       case 'client':
         return <ClientProjectPage />;
-      default:
-        return <PageNotFound/>;
     }
   };
 
