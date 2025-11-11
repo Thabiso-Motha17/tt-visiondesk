@@ -1,0 +1,26 @@
+{
+  "name": "tt-visiondesk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "npm --prefix backend run dev",
+    "client": "npm --prefix frontend run dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Thabiso-Motha17/tt-visiondesk.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Thabiso-Motha17/tt-visiondesk/issues"
+  },
+  "homepage": "https://github.com/Thabiso-Motha17/tt-visiondesk#readme"
+}
+
+
