@@ -35,7 +35,7 @@ This application helps teams manage projects, assign tasks, and monitor progress
 git clone https://github.com/your-username/tt-visiondesk.git
 cd tt-visiondesk
 
-then ->  npm install -> connect to the backend by creating 
+then ->  npm install
 and npm start
 
 
