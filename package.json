@@ -20,7 +20,9 @@
   "bugs": {
     "url": "https://github.com/Thabiso-Motha17/tt-visiondesk/issues"
   },
-  "homepage": "https://github.com/Thabiso-Motha17/tt-visiondesk#readme"
+  "homepage": "https://github.com/Thabiso-Motha17/tt-visiondesk#readme",
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.3"
+  }
 }
-
-

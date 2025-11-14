@@ -46,6 +46,41 @@ CREATE TABLE tasks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+
+-- Comments table
+CREATE TABLE comments (
+    id SERIAL PRIMARY KEY,
+    content TEXT NOT NULL,
+    author_id INTEGER REFERENCES users(id) NOT NULL,
+    project_id INTEGER REFERENCES projects(id),
+    task_id INTEGER REFERENCES tasks(id),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Ensure comment is associated with either project OR task, not both
+    CONSTRAINT comment_target_check CHECK (
+        (project_id IS NOT NULL AND task_id IS NULL) OR 
+        (project_id IS NULL AND task_id IS NOT NULL)
+    )
+);
+
+-- Ratings table
+CREATE TABLE ratings (
+    id SERIAL PRIMARY KEY,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    author_id INTEGER REFERENCES users(id) NOT NULL,
+    project_id INTEGER REFERENCES projects(id),
+    task_id INTEGER REFERENCES tasks(id),
+    comment TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    -- Ensure rating is associated with either project OR task, not both
+    CONSTRAINT rating_target_check CHECK (
+        (project_id IS NOT NULL AND task_id IS NULL) OR 
+        (project_id IS NULL AND task_id IS NOT NULL)
+    ),
+    -- Ensure each client can only rate a project/task once
+    UNIQUE(author_id, project_id, task_id)
+);
 -- Insert sample data
 INSERT INTO companies (name, contact_email) VALUES 
 ('Tech Solutions Inc', 'contact@techsolutions.com'),
