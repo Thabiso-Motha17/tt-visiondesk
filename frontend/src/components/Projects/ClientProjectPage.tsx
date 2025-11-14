@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, type JSX } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { fetchProjects } from '../../store/slices/projectSlice';
@@ -19,6 +19,22 @@ import {
   FaEye
 } from 'react-icons/fa';
 import styles from './ClientProjectPage.module.css';
+
+// Import comments and ratings slice
+import {
+  fetchComments,
+  addComment,
+  fetchRatings,
+  addOrUpdateRating,
+  fetchAverageRating,
+} from '../../store/slices/commentsRatingsSlice';
+import {
+   selectCommentsByProject,
+  selectRatingsByProject,
+  selectAverageRatingByProject,
+  selectAddCommentLoading,
+  selectAddRatingLoading
+} from '../../store/slices/commentsRatingsSelectors';
 
 interface Project {
   id: number;
@@ -53,16 +69,13 @@ interface Task {
 
 interface FeedbackData {
   projectId: number;
-  subject: string;
-  message: string;
-  priority: 'low' | 'medium' | 'high';
+  content: string;
 }
 
 interface RatingData {
   projectId: number;
   rating: number;
-  comments: string;
-  wouldRecommend: boolean;
+  comment: string;
 }
 
 interface ProjectRequestData {
@@ -78,6 +91,11 @@ const ClientProjectPage: React.FC = () => {
   const { projects, loading } = useSelector((state: RootState) => state.projects);
   const { tasks } = useSelector((state: RootState) => state.tasks);
   const { user } = useSelector((state: RootState) => state.auth);
+  
+  // Comments and ratings state
+  const addCommentLoading = useSelector(selectAddCommentLoading);
+  const addRatingLoading = useSelector(selectAddRatingLoading);
+  
   const dispatch = useDispatch();
   
   const [showRequestModal, setShowRequestModal] = useState(false);
@@ -104,7 +122,7 @@ const ClientProjectPage: React.FC = () => {
     };
   };
 
-  // Feedback Functions
+  // Feedback Functions using Redux
   const handleOpenFeedback = (project: Project) => {
     setSelectedProject(project);
     setShowFeedbackModal(true);
@@ -112,8 +130,11 @@ const ClientProjectPage: React.FC = () => {
 
   const handleSubmitFeedback = async (feedbackData: FeedbackData) => {
     try {
-      console.log('Submitting feedback:', feedbackData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await dispatch(addComment({
+        content: feedbackData.content,
+        projectId: feedbackData.projectId
+      }) as any).unwrap();
+      
       alert('Thank you for your feedback! It has been submitted to the project team.');
       setShowFeedbackModal(false);
       setSelectedProject(null);
@@ -123,7 +144,7 @@ const ClientProjectPage: React.FC = () => {
     }
   };
 
-  // Rating Functions
+  // Rating Functions using Redux
   const handleOpenRating = (project: Project) => {
     setSelectedProject(project);
     setShowRatingModal(true);
@@ -131,8 +152,12 @@ const ClientProjectPage: React.FC = () => {
 
   const handleSubmitRating = async (ratingData: RatingData) => {
     try {
-      console.log('Submitting rating:', ratingData);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await dispatch(addOrUpdateRating({
+        rating: ratingData.rating,
+        comment: ratingData.comment,
+        projectId: ratingData.projectId
+      }) as any).unwrap();
+      
       alert('Thank you for your rating! Your feedback helps us improve our services.');
       setShowRatingModal(false);
       setSelectedProject(null);
@@ -140,6 +165,13 @@ const ClientProjectPage: React.FC = () => {
       console.error('Error submitting rating:', error);
       alert('There was an error submitting your rating. Please try again.');
     }
+  };
+
+  // Load project feedback data
+  const handleLoadProjectFeedback = (projectId: number) => {
+    dispatch(fetchComments({ projectId }) as any);
+    dispatch(fetchRatings({ projectId }) as any);
+    dispatch(fetchAverageRating({ projectId }) as any);
   };
 
   // Project Request Functions
@@ -162,16 +194,15 @@ const ClientProjectPage: React.FC = () => {
   // Project Details Functions
   const handleViewProjectDetails = (project: Project) => {
     setProjectDetails(project);
+    handleLoadProjectFeedback(project.id);
   };
 
   const handleDownloadReport = (projectId: number) => {
-    // Simulate report download
     console.log('Downloading report for project:', projectId);
     alert('Project report download started...');
   };
 
   const handleRequestUpdate = (projectId: number) => {
-    // Send update request to project team
     console.log('Requesting update for project:', projectId);
     alert('Update request has been sent to the project team.');
   };
@@ -238,112 +269,18 @@ const ClientProjectPage: React.FC = () => {
       <div className={styles.projectsOverview}>
         <h2>Project Overview</h2>
         <div className={styles.projectsGrid}>
-          {projects.map(project => {
-            const stats = getProjectStats(project.id);
-            const recentDeliverables = tasks
-              .filter(task => 
-                (task as any).project_id === project.id && 
-                task.status === 'completed'
-              )
-              .slice(0, 2);
-
-            return (
-              <div key={project.id} className={styles.projectCard}>
-                <div className={styles.projectHeader}>
-                  <h3>{project.name}</h3>
-                  <span className={`${styles.statusBadge} ${styles[project.status]}`}>
-                    {project.status}
-                  </span>
-                </div>
-
-                <p className={styles.projectDescription}>{project.description}</p>
-
-                {/* Progress Section */}
-                <div className={styles.progressSection}>
-                  <div className={styles.progressInfo}>
-                    <span>Overall Progress</span>
-                    <span>{stats.progress}%</span>
-                  </div>
-                  <div className={styles.progressBar}>
-                    <div 
-                      className={`${styles.progressFill} ${
-                        stats.progress < 50 ? styles.low :
-                        stats.progress < 80 ? styles.medium : styles.high
-                      }`}
-                      style={{ width: `${stats.progress}%` }}
-                    ></div>
-                  </div>
-                </div>
-
-                {/* Project Metrics */}
-                <div className={styles.projectMetrics}>
-                  <div className={styles.metric}>
-                    <span className={styles.metricValue}>{stats.total}</span>
-                    <span className={styles.metricLabel}>Total Tasks</span>
-                  </div>
-                  <div className={styles.metric}>
-                    <span className={styles.metricValue}>{stats.completed}</span>
-                    <span className={styles.metricLabel}>Completed</span>
-                  </div>
-                  <div className={styles.metric}>
-                    <span className={styles.metricValue}>{stats.inProgress}</span>
-                    <span className={styles.metricLabel}>In Progress</span>
-                  </div>
-                </div>
-
-                {/* Recent Deliverables */}
-                {recentDeliverables.length > 0 && (
-                  <div className={styles.recentDeliverables}>
-                    <h4>Recent Deliverables</h4>
-                    {recentDeliverables.map(task => (
-                      <div key={task.id} className={styles.deliverableItem}>
-                        <span className={styles.deliverableTitle}>{task.title}</span>
-                        <span className={styles.deliverableDate}>
-                          {new Date(task.updated_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Deadline */}
-                {project.deadline && (
-                  <div className={styles.deadlineInfo}>
-                    <FaClock />
-                    <span>Deadline: {new Date(project.deadline).toLocaleDateString()}</span>
-                  </div>
-                )}
-
-                {/* Client Actions */}
-                <div className={styles.projectActions}>
-                  <button 
-                    className={styles.btnSecondary}
-                    onClick={() => handleViewProjectDetails(project)}
-                  >
-                    <FaEye /> Details
-                  </button>
-                  <button 
-                    className={styles.btnInfo}
-                    onClick={() => handleOpenFeedback(project)}
-                  >
-                    <FaComment /> Feedback
-                  </button>
-                  <button 
-                    className={styles.btnSuccess}
-                    onClick={() => handleOpenRating(project)}
-                  >
-                    <FaStar /> Rate
-                  </button>
-                  <button 
-                    className={styles.btnWarning}
-                    onClick={() => handleRequestUpdate(project.id)}
-                  >
-                    <FaBell /> Request Update
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+          {projects.map(project => (
+            <ProjectCard 
+              key={project.id}
+              project={project}
+              tasks={tasks}
+              onViewDetails={handleViewProjectDetails}
+              onOpenFeedback={handleOpenFeedback}
+              onOpenRating={handleOpenRating}
+              onRequestUpdate={handleRequestUpdate}
+              onLoadFeedback={handleLoadProjectFeedback}
+            />
+          ))}
         </div>
 
         {projects.length === 0 && (
@@ -381,6 +318,7 @@ const ClientProjectPage: React.FC = () => {
             setSelectedProject(null);
           }}
           onSubmit={handleSubmitFeedback}
+          loading={addCommentLoading}
         />
       )}
 
@@ -393,6 +331,7 @@ const ClientProjectPage: React.FC = () => {
             setSelectedProject(null);
           }}
           onSubmit={handleSubmitRating}
+          loading={addRatingLoading}
         />
       )}
 
@@ -403,6 +342,215 @@ const ClientProjectPage: React.FC = () => {
           onSubmit={handleSubmitProjectRequest}
         />
       )}
+    </div>
+  );
+};
+
+// Project Card Component
+interface ProjectCardProps {
+  project: Project;
+  tasks: Task[];
+  onViewDetails: (project: Project) => void;
+  onOpenFeedback: (project: Project) => void;
+  onOpenRating: (project: Project) => void;
+  onRequestUpdate: (projectId: number) => void;
+  onLoadFeedback: (projectId: number) => void;
+}
+
+const ProjectCard: React.FC<ProjectCardProps> = ({
+  project,
+  tasks,
+  onViewDetails,
+  onOpenFeedback,
+  onOpenRating,
+  onRequestUpdate,
+  onLoadFeedback
+}) => {
+  // Get project-specific comments and ratings
+  const projectComments = useSelector((state: RootState) => 
+    selectCommentsByProject(project.id)(state)
+  );
+  const projectRatings = useSelector((state: RootState) => 
+    selectRatingsByProject(project.id)(state)
+  );
+  const averageRating = useSelector((state: RootState) => 
+    selectAverageRatingByProject(project.id)(state)
+  );
+
+  useEffect(() => {
+    onLoadFeedback(project.id);
+  }, [project.id, onLoadFeedback]);
+
+  const stats = {
+    total: tasks.filter(task => (task as any).project_id === project.id).length,
+    completed: tasks.filter(task => 
+      (task as any).project_id === project.id && task.status === 'completed'
+    ).length,
+    inProgress: tasks.filter(task => 
+      (task as any).project_id === project.id && task.status === 'in_progress'
+    ).length,
+    blocked: tasks.filter(task => 
+      (task as any).project_id === project.id && task.status === 'blocked'
+    ).length,
+    progress: 0
+  };
+
+  stats.progress = stats.total > 0 
+    ? Math.round((stats.completed / stats.total) * 100)
+    : 0;
+
+  const recentDeliverables = tasks
+    .filter(task => 
+      (task as any).project_id === project.id && 
+      task.status === 'completed'
+    )
+    .slice(0, 2);
+
+  const renderStars = (rating: number): JSX.Element[] => {
+    return [...Array(5)].map((_, index) => {
+      const starValue = index + 1;
+      return (
+        <span
+          key={starValue}
+          className={`${styles.star} ${starValue <= rating ? styles.filled : ''}`}
+        >
+          {starValue <= rating ? '★' : '☆'}
+        </span>
+      );
+    });
+  };
+
+  return (
+    <div className={styles.projectCard}>
+      <div className={styles.projectHeader}>
+        <h3>{project.name}</h3>
+        <span className={`${styles.statusBadge} ${styles[project.status]}`}>
+          {project.status}
+        </span>
+      </div>
+
+      <p className={styles.projectDescription}>{project.description}</p>
+
+      {/* Project Rating Summary */}
+      {averageRating && averageRating.average_rating > 0 && (
+        <div className={styles.projectRatingSummary}>
+          <div className={styles.ratingStars}>
+            {renderStars(Math.round(averageRating.average_rating))}
+            <span className={styles.ratingText}>
+              ({averageRating.average_rating.toFixed(1)} from {averageRating.total_ratings} ratings)
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Progress Section */}
+      <div className={styles.progressSection}>
+        <div className={styles.progressInfo}>
+          <span>Overall Progress</span>
+          <span>{stats.progress}%</span>
+        </div>
+        <div className={styles.progressBar}>
+          <div 
+            className={`${styles.progressFill} ${
+              stats.progress < 50 ? styles.low :
+              stats.progress < 80 ? styles.medium : styles.high
+            }`}
+            style={{ width: `${stats.progress}%` }}
+          ></div>
+        </div>
+      </div>
+
+      {/* Project Metrics */}
+      <div className={styles.projectMetrics}>
+        <div className={styles.metric}>
+          <span className={styles.metricValue}>{stats.total}</span>
+          <span className={styles.metricLabel}>Total Tasks</span>
+        </div>
+        <div className={styles.metric}>
+          <span className={styles.metricValue}>{stats.completed}</span>
+          <span className={styles.metricLabel}>Completed</span>
+        </div>
+        <div className={styles.metric}>
+          <span className={styles.metricValue}>{stats.inProgress}</span>
+          <span className={styles.metricLabel}>In Progress</span>
+        </div>
+        <div className={styles.metric}>
+          <span className={styles.metricValue}>{projectComments.length}</span>
+          <span className={styles.metricLabel}>Comments</span>
+        </div>
+      </div>
+
+      {/* Recent Comments Preview */}
+      {projectComments.length > 0 && (
+        <div className={styles.recentComments}>
+          <h4>Recent Feedback</h4>
+          {projectComments.slice(0, 2).map(comment => (
+            <div key={comment.id} className={styles.commentPreview}>
+              <div className={styles.commentAuthor}>{comment.author_name}</div>
+              <div className={styles.commentContent}>{comment.content}</div>
+              <div className={styles.commentDate}>
+                {new Date(comment.created_at).toLocaleDateString()}
+              </div>
+            </div>
+          ))}
+          {projectComments.length > 2 && (
+            <div className={styles.moreComments}>
+              +{projectComments.length - 2} more comments
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Recent Deliverables */}
+      {recentDeliverables.length > 0 && (
+        <div className={styles.recentDeliverables}>
+          <h4>Recent Deliverables</h4>
+          {recentDeliverables.map(task => (
+            <div key={task.id} className={styles.deliverableItem}>
+              <span className={styles.deliverableTitle}>{task.title}</span>
+              <span className={styles.deliverableDate}>
+                {new Date(task.updated_at).toLocaleDateString()}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Deadline */}
+      {project.deadline && (
+        <div className={styles.deadlineInfo}>
+          <FaClock />
+          <span>Deadline: {new Date(project.deadline).toLocaleDateString()}</span>
+        </div>
+      )}
+
+      {/* Client Actions */}
+      <div className={styles.projectActions}>
+        <button 
+          className={styles.btnSecondary}
+          onClick={() => onViewDetails(project)}
+        >
+          <FaEye /> Details
+        </button>
+        <button 
+          className={styles.btnInfo}
+          onClick={() => onOpenFeedback(project)}
+        >
+          <FaComment /> Feedback
+        </button>
+        <button 
+          className={styles.btnSuccess}
+          onClick={() => onOpenRating(project)}
+        >
+          <FaStar /> Rate
+        </button>
+        <button 
+          className={styles.btnWarning}
+          onClick={() => onRequestUpdate(project.id)}
+        >
+          <FaBell /> Request Update
+        </button>
+      </div>
     </div>
   );
 };
@@ -423,6 +571,17 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   onDownloadReport,
   onRequestUpdate
 }) => {
+  // Get project comments and ratings for details view
+  const projectComments = useSelector((state: RootState) => 
+    selectCommentsByProject(project.id)(state)
+  );
+  const projectRatings = useSelector((state: RootState) => 
+    selectRatingsByProject(project.id)(state)
+  );
+  const averageRating = useSelector((state: RootState) => 
+    selectAverageRatingByProject(project.id)(state)
+  );
+
   const stats = {
     total: tasks.length,
     completed: tasks.filter(task => task.status === 'completed').length,
@@ -434,6 +593,20 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   };
 
   const recentTasks = tasks.slice(0, 5);
+
+  const renderStars = (rating: number): JSX.Element[] => {
+    return [...Array(5)].map((_, index) => {
+      const starValue = index + 1;
+      return (
+        <span
+          key={starValue}
+          className={`${styles.star} ${starValue <= rating ? styles.filled : ''}`}
+        >
+          {starValue <= rating ? '★' : '☆'}
+        </span>
+      );
+    });
+  };
 
   return (
     <div className={styles.modalOverlay}>
@@ -476,6 +649,26 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             </div>
           </div>
 
+          {/* Rating Summary */}
+          {averageRating && averageRating.average_rating > 0 && (
+            <div className={styles.ratingSummary}>
+              <h3>Client Rating</h3>
+              <div className={styles.ratingDisplay}>
+                <div className={styles.ratingStars}>
+                  {renderStars(Math.round(averageRating.average_rating))}
+                </div>
+                <div className={styles.ratingDetails}>
+                  <span className={styles.ratingValue}>
+                    {averageRating.average_rating.toFixed(1)} out of 5
+                  </span>
+                  <span className={styles.ratingCount}>
+                    ({averageRating.total_ratings} ratings)
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Progress Stats */}
           <div className={styles.statsSection}>
             <h3>Progress Overview</h3>
@@ -496,8 +689,36 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
                 <div className={styles.statNumber}>{stats.blocked}</div>
                 <div className={styles.statLabel}>Blocked</div>
               </div>
+              <div className={styles.stat}>
+                <div className={styles.statNumber}>{projectComments.length}</div>
+                <div className={styles.statLabel}>Comments</div>
+              </div>
+              <div className={styles.stat}>
+                <div className={styles.statNumber}>{projectRatings.length}</div>
+                <div className={styles.statLabel}>Ratings</div>
+              </div>
             </div>
           </div>
+
+          {/* Recent Comments */}
+          {projectComments.length > 0 && (
+            <div className={styles.commentsSection}>
+              <h3>Recent Feedback</h3>
+              <div className={styles.commentsList}>
+                {projectComments.slice(0, 3).map(comment => (
+                  <div key={comment.id} className={styles.commentItem}>
+                    <div className={styles.commentHeader}>
+                      <strong>{comment.author_name}</strong>
+                      <span className={styles.commentDate}>
+                        {new Date(comment.created_at).toLocaleDateString()}
+                      </span>
+                    </div>
+                    <div className={styles.commentContent}>{comment.content}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Recent Tasks */}
           <div className={styles.tasksSection}>
@@ -548,28 +769,29 @@ interface FeedbackModalProps {
   project: Project;
   onClose: () => void;
   onSubmit: (feedbackData: FeedbackData) => void;
+  loading: boolean;
 }
 
-const FeedbackModal: React.FC<FeedbackModalProps> = ({ project, onClose, onSubmit }) => {
+const FeedbackModal: React.FC<FeedbackModalProps> = ({ 
+  project, 
+  onClose, 
+  onSubmit, 
+  loading 
+}) => {
   const [formData, setFormData] = useState<FeedbackData>({
     projectId: project.id,
-    subject: '',
-    message: '',
-    priority: 'medium'
+    content: ''
   });
-  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     
-    try {
-      await onSubmit(formData);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    } finally {
-      setSubmitting(false);
+    if (!formData.content.trim()) {
+      alert('Please enter your feedback');
+      return;
     }
+
+    await onSubmit(formData);
   };
 
   return (
@@ -584,39 +806,14 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ project, onClose, onSubmi
 
         <form className={styles.feedbackForm} onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label>Subject *</label>
-            <input 
-              type="text" 
-              placeholder="Brief subject for your feedback"
-              value={formData.subject}
-              onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-              required
-              disabled={submitting}
-            />
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Priority</label>
-            <select
-              value={formData.priority}
-              onChange={(e) => setFormData({ ...formData, priority: e.target.value as 'low' | 'medium' | 'high' })}
-              disabled={submitting}
-            >
-              <option value="low">Low</option>
-              <option value="medium">Medium</option>
-              <option value="high">High</option>
-            </select>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Message *</label>
+            <label>Your Feedback *</label>
             <textarea 
-              placeholder="Please provide detailed feedback about the project..."
+              placeholder="Please provide detailed feedback about the project, deliverables, or overall experience..."
               rows={6}
-              value={formData.message}
-              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              value={formData.content}
+              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
               required
-              disabled={submitting}
+              disabled={loading}
             />
           </div>
 
@@ -625,16 +822,16 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ project, onClose, onSubmi
               type="button" 
               className={styles.btnSecondary} 
               onClick={onClose}
-              disabled={submitting}
+              disabled={loading}
             >
               Cancel
             </button>
             <button 
               type="submit" 
               className={styles.btnPrimary}
-              disabled={submitting}
+              disabled={loading}
             >
-              {submitting ? (
+              {loading ? (
                 <>
                   <div className={styles.spinner}></div>
                   Submitting...
@@ -652,33 +849,52 @@ const FeedbackModal: React.FC<FeedbackModalProps> = ({ project, onClose, onSubmi
   );
 };
 
-// Rating Modal Component (similar to previous implementation)
+// Rating Modal Component
 interface RatingModalProps {
   project: Project;
   onClose: () => void;
   onSubmit: (ratingData: RatingData) => void;
+  loading: boolean;
 }
 
-const RatingModal: React.FC<RatingModalProps> = ({ project, onClose, onSubmit }) => {
+const RatingModal: React.FC<RatingModalProps> = ({ 
+  project, 
+  onClose, 
+  onSubmit, 
+  loading 
+}) => {
   const [formData, setFormData] = useState<RatingData>({
     projectId: project.id,
-    rating: 5,
-    comments: '',
-    wouldRecommend: true
+    rating: 0,
+    comment: ''
   });
-  const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmitting(true);
     
-    try {
-      await onSubmit(formData);
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    } finally {
-      setSubmitting(false);
+    if (formData.rating === 0) {
+      alert('Please select a rating');
+      return;
     }
+
+    await onSubmit(formData);
+  };
+
+  const renderStars = (interactive: boolean = true): JSX.Element[] => {
+    return [...Array(5)].map((_, index) => {
+      const starValue = index + 1;
+      return (
+        <button
+          key={starValue}
+          type="button"
+          className={`${styles.star} ${starValue <= formData.rating ? styles.active : ''}`}
+          onClick={() => interactive && setFormData({ ...formData, rating: starValue })}
+          disabled={!interactive || loading}
+        >
+          <FaStar />
+        </button>
+      );
+    });
   };
 
   return (
@@ -695,19 +911,10 @@ const RatingModal: React.FC<RatingModalProps> = ({ project, onClose, onSubmit })
           <div className={styles.formGroup}>
             <label>Overall Rating *</label>
             <div className={styles.starRating}>
-              {[1, 2, 3, 4, 5].map(star => (
-                <button
-                  key={star}
-                  type="button"
-                  className={`${styles.star} ${star <= formData.rating ? styles.active : ''}`}
-                  onClick={() => setFormData({ ...formData, rating: star })}
-                  disabled={submitting}
-                >
-                  <FaStar />
-                </button>
-              ))}
+              {renderStars()}
             </div>
             <div className={styles.ratingLabel}>
+              {formData.rating === 0 && 'Select a rating'}
               {formData.rating === 1 && 'Poor'}
               {formData.rating === 2 && 'Fair'}
               {formData.rating === 3 && 'Good'}
@@ -717,39 +924,13 @@ const RatingModal: React.FC<RatingModalProps> = ({ project, onClose, onSubmit })
           </div>
 
           <div className={styles.formGroup}>
-            <label>Would you recommend our services? *</label>
-            <div className={styles.recommendOptions}>
-              <label className={styles.radioOption}>
-                <input
-                  type="radio"
-                  name="recommend"
-                  checked={formData.wouldRecommend}
-                  onChange={() => setFormData({ ...formData, wouldRecommend: true })}
-                  disabled={submitting}
-                />
-                <span>Yes, definitely</span>
-              </label>
-              <label className={styles.radioOption}>
-                <input
-                  type="radio"
-                  name="recommend"
-                  checked={!formData.wouldRecommend}
-                  onChange={() => setFormData({ ...formData, wouldRecommend: false })}
-                  disabled={submitting}
-                />
-                <span>No, probably not</span>
-              </label>
-            </div>
-          </div>
-
-          <div className={styles.formGroup}>
-            <label>Additional Comments</label>
+            <label>Additional Comments (Optional)</label>
             <textarea 
               placeholder="What did you like most? Any suggestions for improvement?"
               rows={4}
-              value={formData.comments}
-              onChange={(e) => setFormData({ ...formData, comments: e.target.value })}
-              disabled={submitting}
+              value={formData.comment}
+              onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
+              disabled={loading}
             />
           </div>
 
@@ -758,16 +939,16 @@ const RatingModal: React.FC<RatingModalProps> = ({ project, onClose, onSubmit })
               type="button" 
               className={styles.btnSecondary} 
               onClick={onClose}
-              disabled={submitting}
+              disabled={loading}
             >
               Cancel
             </button>
             <button 
               type="submit" 
               className={styles.btnPrimary}
-              disabled={submitting}
+              disabled={loading || formData.rating === 0}
             >
-              {submitting ? (
+              {loading ? (
                 <>
                   <div className={styles.spinner}></div>
                   Submitting...
@@ -785,7 +966,7 @@ const RatingModal: React.FC<RatingModalProps> = ({ project, onClose, onSubmit })
   );
 };
 
-// Project Request Modal Component
+// Project Request Modal Component (unchanged)
 interface ProjectRequestModalProps {
   onClose: () => void;
   onSubmit: (requestData: ProjectRequestData) => void;
