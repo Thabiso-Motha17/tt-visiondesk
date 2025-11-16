@@ -368,6 +368,8 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           yPosition = margin;
         }
 
+        
+        if(member.role === 'developer') {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text(`${member.name} (${member.role})`, margin, yPosition);
@@ -377,6 +379,7 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         doc.text(`Productivity: ${member.productivity}%`, margin, yPosition);
         doc.text(`Tasks Completed: ${member.completed}/${member.tasks}`, margin + 60, yPosition);
         yPosition += 8;
+        }
 
         // Productivity bar
         const productivityBarWidth = 80;

@@ -1,21 +1,24 @@
+-- Companies table
+CREATE TABLE companies (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    contact_email VARCHAR(255),
+    phone VARCHAR(50),
+    address TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Users table
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     email VARCHAR(255) UNIQUE NOT NULL,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(255) NOT NULL,
-    role VARCHAR(50) CHECK (role IN ('admin', 'developer', 'client')) NOT NULL,
-    company_id INTEGER,
+    role VARCHAR(50) CHECK (role IN ('admin', 'developer', 'client', 'manager')) NOT NULL,
+    company_id INTEGER REFERENCES companies(id),
+    is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    is_active BOOLEAN DEFAULT true
-);
-
--- Companies table
-CREATE TABLE companies (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    contact_email VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Projects table
@@ -27,7 +30,8 @@ CREATE TABLE projects (
     admin_id INTEGER REFERENCES users(id),
     status VARCHAR(50) DEFAULT 'active',
     deadline DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Tasks table
@@ -46,41 +50,21 @@ CREATE TABLE tasks (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-
--- Comments table
-CREATE TABLE comments (
+-- Sub-tasks table
+CREATE TABLE sub_tasks (
     id SERIAL PRIMARY KEY,
-    content TEXT NOT NULL,
-    author_id INTEGER REFERENCES users(id) NOT NULL,
-    project_id INTEGER REFERENCES projects(id),
     task_id INTEGER REFERENCES tasks(id),
+    title VARCHAR(500) NOT NULL,
+    description TEXT,
+    status VARCHAR(50) DEFAULT 'not_started',
+    created_by INTEGER REFERENCES users(id),
+    approved BOOLEAN DEFAULT false,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- Ensure comment is associated with either project OR task, not both
-    CONSTRAINT comment_target_check CHECK (
-        (project_id IS NOT NULL AND task_id IS NULL) OR 
-        (project_id IS NULL AND task_id IS NOT NULL)
-    )
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Ratings table
-CREATE TABLE ratings (
-    id SERIAL PRIMARY KEY,
-    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
-    author_id INTEGER REFERENCES users(id) NOT NULL,
-    project_id INTEGER REFERENCES projects(id),
-    task_id INTEGER REFERENCES tasks(id),
-    comment TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    -- Ensure rating is associated with either project OR task, not both
-    CONSTRAINT rating_target_check CHECK (
-        (project_id IS NOT NULL AND task_id IS NULL) OR 
-        (project_id IS NULL AND task_id IS NOT NULL)
-    ),
-    -- Ensure each client can only rate a project/task once
-    UNIQUE(author_id, project_id, task_id)
-);
+
+
 -- Insert sample data
 INSERT INTO companies (name, contact_email) VALUES 
 ('Tech Solutions Inc', 'contact@techsolutions.com'),
