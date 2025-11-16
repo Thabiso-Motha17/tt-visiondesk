@@ -831,3 +831,633 @@
     justify-content: center;
   }
 }
+
+/* Charts Section */
+.chartsSection {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chartsSection h2 {
+  margin: 0 0 25px 0;
+  color: #2d3748;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.chartsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+}
+
+.chartCard {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.chartCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(12, 121, 93, 0.15);
+  border-color: rgb(12, 121, 93);
+}
+
+.chartCard h3 {
+  margin: 0 0 15px 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.chartContainer {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.noData {
+  color: #718096;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+}
+
+/* Bar Chart Styles */
+.barChart {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.barChartItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.barLabel {
+  width: 80px;
+  font-size: 0.8rem;
+  color: #4a5568;
+  font-weight: 500;
+  text-align: right;
+}
+
+.barTrack {
+  flex: 1;
+  height: 20px;
+  background: #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.5s ease-in-out;
+  position: relative;
+}
+
+.barFill.completed {
+  background: linear-gradient(90deg, #48bb78 0%, #68d391 100%);
+}
+
+.barFill.inProgress {
+  background: linear-gradient(90deg, #4299e1 0%, #63b3ed 100%);
+}
+
+.barFill.pending {
+  background: linear-gradient(90deg, #ed8936 0%, #f6ad55 100%);
+}
+
+.barFill.overdue {
+  background: linear-gradient(90deg, #f56565 0%, #fc8181 100%);
+}
+
+.barValue {
+  width: 30px;
+  font-size: 0.8rem;
+  color: #2d3748;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Donut Chart Styles */
+.donutChart {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--color, #4CAF50) 0% var(--percentage, 0%),
+    #e2e8f0 var(--percentage, 0%) 100%
+  );
+  position: relative;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.donutChart::before {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: white;
+  border-radius: 50%;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.donutSegment {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  clip-path: polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 50% 100%);
+}
+
+.donutSegment:nth-child(1) {
+  background: conic-gradient(
+    var(--color) 0% var(--percentage),
+    transparent var(--percentage) 100%
+  );
+  transform: rotate(0deg);
+}
+
+.donutSegment:nth-child(2) {
+  background: conic-gradient(
+    var(--color) 0% var(--percentage),
+    transparent var(--percentage) 100%
+  );
+  transform: rotate(calc(var(--percentage, 0) * 3.6deg));
+}
+
+.donutSegment:nth-child(3) {
+  background: conic-gradient(
+    var(--color) 0% var(--percentage),
+    transparent var(--percentage) 100%
+  );
+  transform: rotate(calc((var(--percentage, 0) + var(--previous-percentage, 0)) * 3.6deg));
+}
+
+.donutSegment span {
+  position: absolute;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  transform: translate(-50%, -50%);
+  top: 50%;
+  left: 50%;
+  white-space: nowrap;
+}
+
+/* Timeline Chart Styles */
+.timelineChart {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.timelineItem {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.timelineProject {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.timelineName {
+  font-size: 0.85rem;
+  color: #4a5568;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.timelineProgress {
+  font-size: 0.8rem;
+  color: #2d3748;
+  font-weight: 600;
+  margin-left: 10px;
+}
+
+.timelineBar {
+  width: 100%;
+  height: 12px;
+  background: #e2e8f0;
+  border-radius: 6px;
+  overflow: hidden;
+  position: relative;
+}
+
+.timelineFill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(12, 121, 93) 0%, #0a8c6c 100%);
+  border-radius: 6px;
+  transition: width 0.5s ease-in-out;
+  position: relative;
+}
+
+.timelineFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(255, 255, 255, 0.5);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Updated Stats Grid for Pending Tasks */
+.statIcon.pending {
+  background: linear-gradient(135deg, #ed8936 0%, #f6ad55 100%);
+}
+
+/* Comments List Styles */
+.commentsList {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.commentItem {
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+  display: flex;
+  justify-content: between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.commentContent {
+  flex: 1;
+}
+
+.commentContent p {
+  margin: 0 0 8px 0;
+  color: #2d3748;
+  line-height: 1.5;
+}
+
+.commentMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.commentDate {
+  font-weight: 500;
+}
+
+.commentEdited {
+  color: #a0aec0;
+  font-style: italic;
+}
+
+.commentActions {
+  display: flex;
+  gap: 8px;
+}
+
+.editBtn, .deleteBtn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s ease;
+}
+
+.editBtn {
+  background: #bee3f8;
+  color: #2b6cb0;
+}
+
+.editBtn:hover {
+  background: #90cdf4;
+  color: #2c5282;
+}
+
+.deleteBtn {
+  background: #fed7d7;
+  color: #c53030;
+}
+
+.deleteBtn:hover {
+  background: #feb2b2;
+  color: #9b2c2c;
+}
+
+.noComments {
+  text-align: center;
+  padding: 40px;
+  color: #718096;
+}
+
+.modalFooter {
+  padding: 20px 24px;
+  border-top: 1px solid #e1e5e9;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Success Messages */
+.successMessage {
+  background: #c6f6d5;
+  color: #276749;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #48bb78;
+  font-weight: 500;
+}
+
+/* Enhanced Progress Bars with Animation */
+.progressBar {
+  position: relative;
+  overflow: hidden;
+}
+
+.progressFill {
+  position: relative;
+  transition: width 1s ease-in-out;
+}
+
+.progressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: slide 2s infinite;
+}
+
+@keyframes slide {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* Chart Legends */
+.chartLegend {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 15px;
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.8rem;
+  color: #4a5568;
+}
+
+.legendColor {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+.legendColor.completed { background: #48bb78; }
+.legendColor.inProgress { background: #4299e1; }
+.legendColor.pending { background: #ed8936; }
+.legendColor.overdue { background: #f56565; }
+.legendColor.active { background: #4CAF50; }
+.legendColor.onHold { background: #FFC107; }
+
+/* Responsive Design for Charts */
+@media (max-width: 768px) {
+  .chartsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .chartCard {
+    padding: 15px;
+  }
+  
+  .chartContainer {
+    height: 180px;
+  }
+  
+  .donutChart {
+    width: 120px;
+    height: 120px;
+  }
+  
+  .donutChart::before {
+    width: 60px;
+    height: 60px;
+  }
+  
+  .barChartItem {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+  }
+  
+  .barLabel {
+    width: auto;
+    text-align: left;
+  }
+  
+  .commentItem {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .commentActions {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 480px) {
+  .chartsSection {
+    padding: 20px;
+  }
+  
+  .chartCard {
+    padding: 12px;
+  }
+  
+  .chartContainer {
+    height: 160px;
+  }
+  
+  .timelineProject {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .timelineProgress {
+    margin-left: 0;
+  }
+}
+
+/* Progress Reports Section */
+.progressReports {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  margin-bottom: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.progressReports h2 {
+  margin: 0 0 25px 0;
+  color: #2d3748;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.reportsList {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.reportItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border-left: 4px solid rgb(12, 121, 93);
+  transition: all 0.2s ease;
+}
+
+.reportItem:hover {
+  background: #edf2f7;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(12, 121, 93, 0.15);
+}
+
+.reportInfo h4 {
+  margin: 0 0 8px 0;
+  color: #2d3748;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.reportInfo p {
+  margin: 0 0 12px 0;
+  color: #718096;
+  font-size: 0.9rem;
+}
+
+.reportStats {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.reportStat {
+  color: #4a5568;
+  font-size: 0.9rem;
+}
+
+.reportStat strong {
+  color: #2d3748;
+}
+
+.reportActions {
+  display: flex;
+  gap: 10px;
+}
+
+.reportBtn {
+  padding: 10px 16px;
+  border: 1px solid rgb(12, 121, 93);
+  background: white;
+  color: rgb(12, 121, 93);
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.reportBtn:hover {
+  background: rgb(12, 121, 93);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.noReports {
+  text-align: center;
+  padding: 40px;
+  color: #718096;
+  font-style: italic;
+}
+
+/* Export Data Feature */
+.statIcon.export {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Responsive Design for Reports */
+@media (max-width: 768px) {
+  .reportItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+
+  .reportActions {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .reportBtn {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .reportStats {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

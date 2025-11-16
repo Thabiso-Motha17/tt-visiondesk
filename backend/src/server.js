@@ -422,7 +422,8 @@ app.get('/api/projects/:id', authenticateToken, async (req, res) => {
 // Create project (Admin only)
 app.post('/api/projects', authenticateToken, async (req, res) => {
   try {
-    if (req.user.role !== 'manager' || req.user.role !== 'admin') {
+    // FIX: Changed from OR to AND
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -472,7 +473,8 @@ app.put('/api/projects/:id', authenticateToken, async (req, res) => {
 // Delete project (Admin only)
 app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
   try {
-    if (req.user.role !== 'manager' || req.user.role !== 'admin') {
+    // FIX: Changed from OR to AND
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -561,7 +563,8 @@ app.get('/api/tasks/:id', authenticateToken, async (req, res) => {
 // Create task (Admin only)
 app.post('/api/tasks', authenticateToken, async (req, res) => {
   try {
-    if (req.user.role !== 'manager' || req.user.role !== 'admin') {
+    // FIX: Changed from OR to AND
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -618,7 +621,8 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
 // Delete task (Admin only)
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
-    if (req.user.role !== 'manager' || req.user.role !== 'admin') {
+    // FIX: Changed from OR to AND
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -877,189 +881,6 @@ app.delete('/api/comments/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== RATING ROUTES ====================
-
-// Get ratings for a project or task
-app.get('/api/ratings', authenticateToken, async (req, res) => {
-  try {
-    const { project_id, task_id } = req.query;
-    
-    if (!project_id && !task_id) {
-      return res.status(400).json({ error: 'Either project_id or task_id is required' });
-    }
-
-    let query = `
-      SELECT r.*, u.name as author_name, u.role as author_role
-      FROM ratings r
-      JOIN users u ON r.author_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
-
-    if (project_id) {
-      query += ' AND r.project_id = $1';
-      params.push(project_id);
-    } else if (task_id) {
-      query += ' AND r.task_id = $1';
-      params.push(task_id);
-    }
-
-    query += ' ORDER BY r.created_at DESC';
-
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Get average rating for a project or task
-app.get('/api/ratings/average', authenticateToken, async (req, res) => {
-  try {
-    const { project_id, task_id } = req.query;
-    
-    if (!project_id && !task_id) {
-      return res.status(400).json({ error: 'Either project_id or task_id is required' });
-    }
-
-    let query = `
-      SELECT 
-        AVG(rating) as average_rating,
-        COUNT(*) as total_ratings
-      FROM ratings 
-      WHERE 1=1
-    `;
-    const params = [];
-
-    if (project_id) {
-      query += ' AND project_id = $1';
-      params.push(project_id);
-    } else if (task_id) {
-      query += ' AND task_id = $1';
-      params.push(task_id);
-    }
-
-    const result = await pool.query(query, params);
-    
-    res.json({
-      average_rating: parseFloat(result.rows[0].average_rating) || 0,
-      total_ratings: parseInt(result.rows[0].total_ratings) || 0
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Create or update rating (Client only)
-app.post('/api/ratings', authenticateToken, async (req, res) => {
-  try {
-    // Only clients can create ratings
-    if (req.user.role !== 'client') {
-      return res.status(403).json({ error: 'Only clients can create ratings' });
-    }
-
-    const { rating, comment, project_id, task_id } = req.body;
-
-    // Validate rating range
-    if (rating < 1 || rating > 5) {
-      return res.status(400).json({ error: 'Rating must be between 1 and 5' });
-    }
-
-    // Validate that either project_id or task_id is provided, but not both
-    if ((!project_id && !task_id) || (project_id && task_id)) {
-      return res.status(400).json({ error: 'Either project_id or task_id must be provided, but not both' });
-    }
-
-    // Verify that the client has access to the project/task
-    if (project_id) {
-      const projectCheck = await pool.query(
-        `SELECT p.* FROM projects p 
-         JOIN users u ON p.client_company_id = u.company_id 
-         WHERE p.id = $1 AND u.id = $2`,
-        [project_id, req.user.id]
-      );
-      if (projectCheck.rows.length === 0) {
-        return res.status(403).json({ error: 'Access denied to this project' });
-      }
-    } else if (task_id) {
-      const taskCheck = await pool.query(
-        `SELECT t.* FROM tasks t 
-         JOIN projects p ON t.project_id = p.id 
-         JOIN users u ON p.client_company_id = u.company_id 
-         WHERE t.id = $1 AND u.id = $2`,
-        [task_id, req.user.id]
-      );
-      if (taskCheck.rows.length === 0) {
-        return res.status(403).json({ error: 'Access denied to this task' });
-      }
-    }
-
-    // Check if rating already exists
-    const existingRating = await pool.query(
-      `SELECT * FROM ratings 
-       WHERE author_id = $1 AND project_id = $2 AND task_id = $3`,
-      [req.user.id, project_id, task_id]
-    );
-
-    let result;
-    if (existingRating.rows.length > 0) {
-      // Update existing rating
-      result = await pool.query(
-        `UPDATE ratings 
-         SET rating = $1, comment = $2, updated_at = CURRENT_TIMESTAMP 
-         WHERE id = $3 
-         RETURNING *`,
-        [rating, comment, existingRating.rows[0].id]
-      );
-    } else {
-      // Create new rating
-      result = await pool.query(
-        `INSERT INTO ratings (rating, comment, author_id, project_id, task_id) 
-         VALUES ($1, $2, $3, $4, $5) 
-         RETURNING *`,
-        [rating, comment, req.user.id, project_id, task_id]
-      );
-    }
-
-    // Fetch the rating with author details
-    const ratingWithAuthor = await pool.query(`
-      SELECT r.*, u.name as author_name, u.role as author_role
-      FROM ratings r
-      JOIN users u ON r.author_id = u.id
-      WHERE r.id = $1
-    `, [result.rows[0].id]);
-
-    res.status(201).json(ratingWithAuthor.rows[0]);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Delete rating (Client only - only their own ratings, or Admin)
-app.delete('/api/ratings/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    let ratingCheck;
-    if (req.user.role === 'admin' || req.user.role === 'manager') {
-      ratingCheck = await pool.query('SELECT * FROM ratings WHERE id = $1', [id]);
-    } else {
-      ratingCheck = await pool.query(
-        'SELECT * FROM ratings WHERE id = $1 AND author_id = $2',
-        [id, req.user.id]
-      );
-    }
-
-    if (ratingCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Rating not found or access denied' });
-    }
-
-    await pool.query('DELETE FROM ratings WHERE id = $1', [id]);
-    res.json({ message: 'Rating deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 // ==================== HEALTH CHECK & DEBUG ROUTES ====================
 
 // Health check
@@ -1101,8 +922,15 @@ app.get('/api/debug/db', async (req, res) => {
   }
 });
 
+// Test route to verify ratings endpoint
+app.get('/api/ratings/test', (req, res) => {
+  res.json({ message: 'Ratings endpoint is working!' });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Database: ${process.env.DB_NAME}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`⭐ Ratings test: http://localhost:${PORT}/api/ratings/test`);
+  console.log(`🌟 Ratings dashboard: http://localhost:${PORT}/api/ratings/dashboard/summary`);
 });
