@@ -74,26 +74,26 @@
 }
 
 .statIcon.total {
-  background: linear-gradient(135deg, rgb(12, 121, 93) 0%, rgb(8, 94, 72) 100%);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .statIcon.completed {
-  background: linear-gradient(135deg, rgb(12, 121, 93) 0%, rgb(8, 94, 72) 100%);
+  background: linear-gradient(135deg, rgb(12, 121, 93) 0%, #0a8c6c 100%);
 }
 
 .statIcon.progress {
-  background: linear-gradient(135deg, rgb(12, 121, 93) 0%, rgb(8, 94, 72) 100%);
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
 .statIcon.blocked {
-  background: linear-gradient(135deg, rgb(12, 121, 93) 0%, rgb(8, 94, 72) 100%);
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
 }
 
 .statInfo h3 {
   margin: 0 0 5px 0;
   font-size: 2rem;
   font-weight: 700;
-  color: rgb(12, 121, 93);
+  color: #2d3748;
 }
 
 .statInfo p {
@@ -158,7 +158,7 @@
 
 .filterGroup label {
   font-weight: 600;
-  color: rgb(12, 121, 93);
+  color: #4a5568;
   font-size: 0.9rem;
 }
 
@@ -190,7 +190,7 @@
 
 .tasksOverview h2 {
   margin: 0 0 25px 0;
-  color: rgb(12, 121, 93);
+  color: #2d3748;
   font-size: 1.5rem;
   font-weight: 600;
 }
@@ -227,7 +227,7 @@
 
 .taskHeader h3 {
   margin: 0;
-  color: rgb(12, 121, 93);
+  color: #2d3748;
   font-size: 1.2rem;
   font-weight: 600;
   flex: 1;
@@ -256,21 +256,18 @@
 }
 
 .statusBadge.completed {
-  background: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.3);
+  background: #c6f6d5;
+  color: #276749;
 }
 
 .statusBadge.in_progress {
-  background: rgba(255, 193, 7, 0.1);
+  background: #feebc8;
   color: #d69e2e;
-  border: 1px solid rgba(255, 193, 7, 0.3);
 }
 
 .statusBadge.blocked {
-  background: rgba(220, 53, 69, 0.1);
+  background: #fed7d7;
   color: #c53030;
-  border: 1px solid rgba(220, 53, 69, 0.3);
 }
 
 .statusBadge.not_started {
@@ -287,22 +284,22 @@
 }
 
 .priorityBadge.low {
-  background: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
+  background: #c6f6d5;
+  color: #276749;
 }
 
 .priorityBadge.medium {
-  background: rgba(255, 193, 7, 0.1);
+  background: #feebc8;
   color: #d69e2e;
 }
 
 .priorityBadge.high {
-  background: rgba(220, 53, 69, 0.1);
+  background: #fed7d7;
   color: #c53030;
 }
 
 .priorityBadge.urgent {
-  background: rgba(220, 53, 69, 0.2);
+  background: #fed7d7;
   color: #c53030;
   font-weight: 700;
 }
@@ -334,7 +331,7 @@
 }
 
 .detailItem strong {
-  color: rgb(12, 121, 93);
+  color: #4a5568;
   font-weight: 600;
 }
 
@@ -367,14 +364,26 @@
 
 .progressFill {
   height: 100%;
-  background: linear-gradient(90deg, rgb(12, 121, 93) 0%, rgb(8, 94, 72) 100%);
+  background: linear-gradient(90deg, rgb(12, 121, 93) 0%, #0a8c6c 100%);
   border-radius: 3px;
   transition: width 0.3s ease;
 }
 
+.progressFill.low {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.progressFill.medium {
+  background: linear-gradient(90deg, #f59e0b, #fbbf24);
+}
+
+.progressFill.high {
+  background: linear-gradient(90deg, #10b981, #34d399);
+}
+
 .progressText {
   font-size: 0.85rem;
-  color: rgb(12, 121, 93);
+  color: #4a5568;
   font-weight: 500;
   min-width: 40px;
   text-align: right;
@@ -412,43 +421,43 @@
 }
 
 .btnPrimary:hover:not(:disabled) {
-  background: rgb(8, 94, 72);
+  background: #0a8c6c;
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(12, 121, 93, 0.3);
 }
 
 .btnSecondary {
-  background: rgb(12, 121, 93);
+  background: #6b7280;
   color: white;
   border: none;
 }
 
 .btnSecondary:hover:not(:disabled) {
-  background: rgb(8, 94, 72);
+  background: #4b5563;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(12, 121, 93, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btnSuccess {
-  background: rgb(12, 121, 93);
+  background: #10b981;
   color: white;
   border: none;
 }
 
 .btnSuccess:hover:not(:disabled) {
-  background: rgb(8, 94, 72);
+  background: #059669;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(12, 121, 93, 0.3);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.3);
 }
 
 .btnInfo {
   background: white;
-  color: rgb(12, 121, 93);
-  border: 1px solid rgb(12, 121, 93);
+  color: #17a2b8;
+  border: 1px solid #17a2b8;
 }
 
 .btnInfo:hover:not(:disabled) {
-  background: rgb(12, 121, 93);
+  background: #17a2b8;
   color: white;
   transform: translateY(-1px);
 }
@@ -532,7 +541,7 @@
   align-items: center;
   padding: 24px 32px;
   border-bottom: 1px solid #e5e7eb;
-  background: linear-gradient(135deg, rgb(12, 121, 93) 0%, rgb(8, 94, 72) 100%);
+  background: linear-gradient(135deg, rgb(12, 121, 93) 0%, rgb(12, 121, 93) 100%);
   color: white;
 }
 
@@ -569,7 +578,7 @@
   overflow-y: auto;
   flex: 1;
   background: #f8fafc;
-  min-height: 0;
+  min-height: 0; /* Important for flex scrolling */
 }
 
 /* Scrollable Rating Form */
@@ -584,7 +593,7 @@
   display: flex;
   flex-direction: column;
   flex: 1;
-  min-height: 0;
+  min-height: 0; /* Important for flex scrolling */
 }
 
 .ratingFormContent {
@@ -612,7 +621,7 @@
 .ratingTypeSection h4 {
   margin: 0 0 16px 0;
   font-size: 1.1rem;
-  color: rgb(12, 121, 93);
+  color: #374151;
   font-weight: 600;
 }
 
@@ -628,7 +637,7 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: rgb(12, 121, 93);
+  color: #374151;
   font-size: 0.9rem;
 }
 
@@ -645,8 +654,8 @@
   margin: 0 0 12px 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: rgb(12, 121, 93);
-  border-bottom: 2px solid rgb(12, 121, 93);
+  color: #374151;
+  border-bottom: 2px solid #e5e7eb;
   padding-bottom: 8px;
 }
 
@@ -673,7 +682,7 @@
 
 .infoItem strong {
   font-weight: 600;
-  color: rgb(12, 121, 93);
+  color: #374151;
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -697,7 +706,7 @@
   margin: 0 0 16px 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: rgb(12, 121, 93);
+  color: #374151;
 }
 
 .progressContainer {
@@ -713,12 +722,12 @@
 
 .progressInfo span {
   font-size: 0.95rem;
-  color: rgb(12, 121, 93);
+  color: #6b7280;
 }
 
 .progressInfo span:last-child {
   font-weight: 600;
-  color: rgb(12, 121, 93);
+  color: #374151;
 }
 
 /* Progress Bar */
@@ -734,7 +743,6 @@
 .progressFill {
   height: 100%;
   border-radius: 6px;
-  background: linear-gradient(90deg, rgb(12, 121, 93) 0%, rgb(8, 94, 72) 100%);
   transition: width 0.3s ease;
 }
 
@@ -750,51 +758,51 @@
 }
 
 .modal .statusBadge.not_started {
-  background-color: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.3);
+  background-color: #f3f4f6;
+  color: #6b7280;
+  border: 1px solid #d1d5db;
 }
 
 .modal .statusBadge.in_progress {
-  background-color: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.3);
+  background-color: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
 }
 
 .modal .statusBadge.blocked {
-  background-color: rgba(220, 53, 69, 0.1);
+  background-color: #fee2e2;
   color: #dc2626;
-  border: 1px solid rgba(220, 53, 69, 0.3);
+  border: 1px solid #fca5a5;
 }
 
 .modal .statusBadge.completed {
-  background-color: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.3);
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
 }
 
 .modal .priorityBadge.low {
-  background-color: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.3);
+  background-color: #d1fae5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
 }
 
 .modal .priorityBadge.medium {
-  background-color: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.3);
+  background-color: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fcd34d;
 }
 
 .modal .priorityBadge.high {
-  background-color: rgba(12, 121, 93, 0.1);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.3);
+  background-color: #fee2e2;
+  color: #dc2626;
+  border: 1px solid #fca5a5;
 }
 
 .modal .priorityBadge.critical {
-  background-color: rgba(12, 121, 93, 0.2);
-  color: rgb(12, 121, 93);
-  border: 1px solid rgba(12, 121, 93, 0.4);
+  background-color: #fecaca;
+  color: #991b1b;
+  border: 1px solid #f87171;
 }
 
 /* Overdue Text */
@@ -811,7 +819,7 @@
   padding: 24px 32px;
   border-top: 1px solid #e5e7eb;
   background: white;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent actions from shrinking */
 }
 
 /* Rating Styles */
@@ -820,12 +828,12 @@
   align-items: center;
   gap: 4px;
   font-size: 0.8rem;
-  color: rgb(12, 121, 93);
+  color: #f59e0b;
   font-weight: 600;
 }
 
 .starIcon {
-  color: rgb(12, 121, 93);
+  color: #f59e0b;
 }
 
 .userRating {
@@ -846,7 +854,7 @@
 }
 
 .starFilled {
-  color: rgb(12, 121, 93);
+  color: #f59e0b;
   font-size: 0.9rem;
 }
 
@@ -869,7 +877,7 @@
 .ratingSummary h3 {
   margin: 0 0 16px 0;
   font-size: 1.2rem;
-  color: rgb(12, 121, 93);
+  color: #374151;
   font-weight: 600;
 }
 
@@ -890,7 +898,7 @@
 .ratingValue {
   font-size: 2rem;
   font-weight: 700;
-  color: rgb(12, 121, 93);
+  color: #f59e0b;
 }
 
 .ratingOverview .stars {
@@ -924,7 +932,7 @@
 
 .ratingType span:first-child {
   font-weight: 600;
-  color: rgb(12, 121, 93);
+  color: #374151;
   min-width: 100px;
 }
 
@@ -941,7 +949,7 @@
 
 .ratingStars .ratingValue {
   font-size: 0.9rem;
-  color: rgb(12, 121, 93);
+  color: #6b7280;
   min-width: 40px;
   text-align: right;
 }
@@ -969,13 +977,13 @@
 }
 
 .star:hover:not(:disabled) {
-  color: rgb(12, 121, 93);
+  color: #fbbf24;
   transform: scale(1.1);
-  background: rgba(12, 121, 93, 0.1);
+  background: rgba(245, 158, 11, 0.1);
 }
 
 .star.active {
-  color: rgb(12, 121, 93);
+  color: #f59e0b;
 }
 
 .star:disabled {
@@ -984,7 +992,7 @@
 }
 
 .star:focus {
-  outline: 2px solid rgb(12, 121, 93);
+  outline: 2px solid #f59e0b;
   outline-offset: 2px;
 }
 
@@ -1011,8 +1019,8 @@
 
 .ratingForm .formGroup textarea:focus {
   outline: none;
-  border-color: rgb(12, 121, 93);
-  box-shadow: 0 0 0 3px rgba(12, 121, 93, 0.1);
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
 }
 
 .ratingForm .formGroup textarea:disabled {
@@ -1029,7 +1037,7 @@
   padding: 20px;
   border-top: 1px solid #e5e7eb;
   background: white;
-  flex-shrink: 0;
+  flex-shrink: 0; /* Prevent actions from shrinking */
 }
 
 /* Spinner */
@@ -1309,12 +1317,12 @@
 }
 
 .ratingFormContent::-webkit-scrollbar-thumb {
-  background: rgb(12, 121, 93);
+  background: #c1c1c1;
   border-radius: 3px;
 }
 
 .ratingFormContent::-webkit-scrollbar-thumb:hover {
-  background: rgb(8, 94, 72);
+  background: #a8a8a8;
 }
 
 /* Ensure form is properly scrollable on all devices */
@@ -1338,5 +1346,5 @@
 .ratingFormContent {
   flex: 1;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
+  -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
 }
