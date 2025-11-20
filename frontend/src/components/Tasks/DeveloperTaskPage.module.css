@@ -89,15 +89,15 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
-  border-left: 4px solid #3498db;
+  border-left: 4px solid rgb(12, 121, 93);
 }
 
 .statCard.total {
-  border-left-color: #3498db;
+  border-left-color: rgb(12, 121, 93);
 }
 
 .statCard.completed {
-  border-left-color: #27ae60;
+  border-left-color: rgb(12, 121, 93);
 }
 
 .statCard.progress {
@@ -121,11 +121,11 @@
 }
 
 .statIcon.total {
-  background: #3498db;
+  background: rgb(12, 121, 93);
 }
 
 .statIcon.completed {
-  background: #27ae60;
+  background: rgb(12, 121, 93);
 }
 
 .statIcon.progress {
@@ -181,7 +181,7 @@
 
 .searchBox input:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: rgb(12, 121, 93);
 }
 
 .filterControls {
@@ -280,9 +280,9 @@
 }
 
 .statusBadge.completed {
-  background: #d1edff;
-  color: #0c5460;
-  border: 1px solid #bee5eb;
+  background: rgba(12, 121, 93, 0.1);
+  color: rgb(12, 121, 93);
+  border: 1px solid rgba(12, 121, 93, 0.3);
 }
 
 .taskDescription {
@@ -327,14 +327,16 @@
 }
 
 .priorityBadge.high {
-  background: #f8d7da;
-  color: #721c24;
+  background: rgba(12, 121, 93, 0.15);
+  color: rgb(12, 121, 93);
+  border: 1px solid rgba(12, 121, 93, 0.3);
 }
 
 .priorityBadge.urgent {
-  background: #f5c6cb;
-  color: #721c24;
+  background: rgba(12, 121, 93, 0.2);
+  color: rgb(12, 121, 93);
   font-weight: 700;
+  border: 1px solid rgba(12, 121, 93, 0.4);
 }
 
 .overdue {
@@ -378,7 +380,7 @@
 }
 
 .progressFill.high {
-  background: #27ae60;
+  background: rgb(12, 121, 93);
 }
 
 .progressControls {
@@ -409,8 +411,8 @@
 
 .btnProgressPrimary {
   padding: 6px 12px;
-  border: 1px solid #27ae60;
-  background: #27ae60;
+  border: 1px solid rgb(12, 121, 93);
+  background: rgb(12, 121, 93);
   color: white;
   border-radius: 6px;
   font-size: 12px;
@@ -419,8 +421,8 @@
 }
 
 .btnProgressPrimary:hover:not(:disabled) {
-  background: #219653;
-  border-color: #219653;
+  background: rgb(10, 100, 77);
+  border-color: rgb(10, 100, 77);
 }
 
 .btnProgressPrimary:disabled {
@@ -459,21 +461,21 @@
 }
 
 .btnQuickStart {
-  background: #3498db;
+  background: rgb(12, 121, 93);
   color: white;
 }
 
 .btnQuickStart:hover:not(:disabled) {
-  background: #2980b9;
+  background: rgb(10, 100, 77);
 }
 
 .btnQuickComplete {
-  background: #27ae60;
+  background: rgb(12, 121, 93);
   color: white;
 }
 
 .btnQuickComplete:hover:not(:disabled) {
-  background: #219653;
+  background: rgb(10, 100, 77);
 }
 
 .btnQuickBlock {
@@ -535,9 +537,9 @@
 }
 
 .btnStatus.active {
-  background: #3498db;
+  background: rgb(12, 121, 93);
   color: white;
-  border-color: #3498db;
+  border-color: rgb(12, 121, 93);
 }
 
 .btnStatus:disabled {
@@ -553,8 +555,8 @@
 
 .btnEdit {
   padding: 8px 16px;
-  border: 1px solid #3498db;
-  background: #3498db;
+  border: 1px solid rgb(12, 121, 93);
+  background: rgb(12, 121, 93);
   color: white;
   border-radius: 6px;
   font-size: 14px;
@@ -566,8 +568,8 @@
 }
 
 .btnEdit:hover:not(:disabled) {
-  background: #2980b9;
-  border-color: #2980b9;
+  background: rgb(10, 100, 77);
+  border-color: rgb(10, 100, 77);
 }
 
 .btnEdit:disabled {
@@ -685,7 +687,7 @@
 .formGroup select:focus,
 .formGroup textarea:focus {
   outline: none;
-  border-color: #3498db;
+  border-color: rgb(12, 121, 93);
 }
 
 .formGroup textarea {
@@ -782,8 +784,8 @@
 
 .btnPrimary {
   padding: 10px 20px;
-  border: 1px solid #3498db;
-  background: #3498db;
+  border: 1px solid rgb(12, 121, 93);
+  background: rgb(12, 121, 93);
   color: white;
   border-radius: 6px;
   font-size: 14px;
@@ -795,8 +797,8 @@
 }
 
 .btnPrimary:hover:not(:disabled) {
-  background: #2980b9;
-  border-color: #2980b9;
+  background: rgb(10, 100, 77);
+  border-color: rgb(10, 100, 77);
 }
 
 .btnPrimary:disabled {
