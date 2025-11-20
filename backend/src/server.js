@@ -17,10 +17,10 @@ app.use(express.json());
 
 // Database connection
 const pool = new Pool({
-  user: process.env.DB_USER || 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  database: process.env.DB_NAME || 'visiondesk_database',
-  password: process.env.DB_PASSWORD || 'Steak',
+  user: process.env.DB_USER ,
+  host: process.env.DB_HOST ,
+  database: process.env.DB_NAME,
+  password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT || 5432,
 });
 
@@ -79,7 +79,7 @@ app.post('/api/auth/login', async (req, res) => {
     const validPassword = await bcrypt.compare(password, user.password);
     
     if (!validPassword) {
-      return res.status(401).json({ error: 'Invalid credentials here' });
+      return res.status(401).json({ error: 'Invalid credentials' });
     }
     
     const token = jwt.sign(
@@ -97,6 +97,325 @@ app.post('/api/auth/login', async (req, res) => {
         role: user.role,
         company_id: user.company_id
       }
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Validate token
+app.get('/api/auth/validate', authenticateToken, async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT id, email, name, role, company_id, is_active FROM users WHERE id = $1 AND is_active = true',
+      [req.user.id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found or inactive' });
+    }
+    
+    res.json({ user: result.rows[0] });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ==================== RATINGS & COMMENTS ROUTES ====================
+
+// Get project ratings with comments
+app.get('/api/projects/:projectId/ratings', authenticateToken, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    
+    // Check if user has access to this project
+    const projectCheck = await pool.query(
+      `SELECT p.* FROM projects p 
+       WHERE p.id = $1 AND (
+         p.client_company_id = (SELECT company_id FROM users WHERE id = $2) OR
+         $3 IN ('admin', 'manager') OR
+         p.id IN (SELECT project_id FROM tasks WHERE assigned_to = $2)
+       )`,
+      [projectId, req.user.id, req.user.role]
+    );
+    
+    if (projectCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied to this project' });
+    }
+    
+    const result = await pool.query(`
+      SELECT pr.*, u.name as user_name, u.role as user_role
+      FROM project_ratings pr
+      JOIN users u ON pr.user_id = u.id
+      WHERE pr.project_id = $1
+      ORDER BY pr.created_at DESC
+    `, [projectId]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create or update project rating with comment
+app.post('/api/projects/:projectId/ratings', authenticateToken, async (req, res) => {
+  try {
+    const { projectId } = req.params;
+    const { rating, comment, would_recommend } = req.body;
+    
+    // Only clients can rate projects
+    if (req.user.role !== 'client') {
+      return res.status(403).json({ error: 'Only clients can rate projects' });
+    }
+    
+    // Check if client has access to this project
+    const projectCheck = await pool.query(
+      'SELECT * FROM projects WHERE id = $1 AND client_company_id = (SELECT company_id FROM users WHERE id = $2)',
+      [projectId, req.user.id]
+    );
+    
+    if (projectCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied to this project' });
+    }
+    
+    // Check if user already rated this project
+    const existingRating = await pool.query(
+      'SELECT * FROM project_ratings WHERE project_id = $1 AND user_id = $2',
+      [projectId, req.user.id]
+    );
+    
+    let result;
+    if (existingRating.rows.length > 0) {
+      // Update existing rating
+      result = await pool.query(
+        `UPDATE project_ratings 
+         SET rating = $1, comment = $2, would_recommend = $3, updated_at = CURRENT_TIMESTAMP 
+         WHERE project_id = $4 AND user_id = $5 
+         RETURNING *`,
+        [rating, comment, would_recommend, projectId, req.user.id]
+      );
+    } else {
+      // Create new rating
+      result = await pool.query(
+        `INSERT INTO project_ratings (project_id, user_id, rating, comment, would_recommend) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING *`,
+        [projectId, req.user.id, rating, comment, would_recommend]
+      );
+    }
+    
+    // Fetch the rating with user details
+    const ratingWithUser = await pool.query(`
+      SELECT pr.*, u.name as user_name, u.role as user_role
+      FROM project_ratings pr
+      JOIN users u ON pr.user_id = u.id
+      WHERE pr.id = $1
+    `, [result.rows[0].id]);
+    
+    res.status(201).json(ratingWithUser.rows[0]);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Get task ratings with comments
+app.get('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    
+    // Check if user has access to this task
+    const taskCheck = await pool.query(
+      `SELECT t.* FROM tasks t 
+       WHERE t.id = $1 AND (
+         t.assigned_to = $2 OR
+         $3 IN ('admin', 'manager') OR
+         t.project_id IN (SELECT id FROM projects WHERE client_company_id = (SELECT company_id FROM users WHERE id = $2))
+       )`,
+      [taskId, req.user.id, req.user.role]
+    );
+    
+    if (taskCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied to this task' });
+    }
+    
+    const result = await pool.query(`
+      SELECT tr.*, u.name as user_name, u.role as user_role
+      FROM task_ratings tr
+      JOIN users u ON tr.user_id = u.id
+      WHERE tr.task_id = $1
+      ORDER BY tr.created_at DESC
+    `, [taskId]);
+    
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Create or update task rating with comment
+app.post('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
+  try {
+    const { taskId } = req.params;
+    const { rating, comment, rating_type = 'quality' } = req.body;
+    
+    // Only clients can rate tasks
+    if (req.user.role !== 'client') {
+      return res.status(403).json({ error: 'Only clients can rate tasks' });
+    }
+    
+    // Check if client has access to this task
+    const taskCheck = await pool.query(
+      `SELECT t.* FROM tasks t 
+       JOIN projects p ON t.project_id = p.id 
+       WHERE t.id = $1 AND p.client_company_id = (SELECT company_id FROM users WHERE id = $2)`,
+      [taskId, req.user.id]
+    );
+    
+    if (taskCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied to this task' });
+    }
+    
+    // Check if user already rated this task with this rating type
+    const existingRating = await pool.query(
+      'SELECT * FROM task_ratings WHERE task_id = $1 AND user_id = $2 AND rating_type = $3',
+      [taskId, req.user.id, rating_type]
+    );
+    
+    let result;
+    if (existingRating.rows.length > 0) {
+      // Update existing rating
+      result = await pool.query(
+        `UPDATE task_ratings 
+         SET rating = $1, comment = $2, updated_at = CURRENT_TIMESTAMP 
+         WHERE task_id = $3 AND user_id = $4 AND rating_type = $5 
+         RETURNING *`,
+        [rating, comment, taskId, req.user.id, rating_type]
+      );
+    } else {
+      // Create new rating
+      result = await pool.query(
+        `INSERT INTO task_ratings (task_id, user_id, rating, comment, rating_type) 
+         VALUES ($1, $2, $3, $4, $5) 
+         RETURNING *`,
+        [taskId, req.user.id, rating, comment, rating_type]
+      );
+    }
+    
+    // Fetch the rating with user details
+    const ratingWithUser = await pool.query(`
+      SELECT tr.*, u.name as user_name, u.role as user_role
+      FROM task_ratings tr
+      JOIN users u ON tr.user_id = u.id
+      WHERE tr.id = $1
+    `, [result.rows[0].id]);
+    
+    res.status(201).json(ratingWithUser.rows[0]);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+// Delete project rating
+app.delete('/api/projects/:projectId/ratings/:ratingId', authenticateToken, async (req, res) => {
+  try {
+    const { projectId, ratingId } = req.params;
+    
+    // Check if rating exists and user is the author or admin
+    const ratingCheck = await pool.query(
+      'SELECT * FROM project_ratings WHERE id = $1 AND project_id = $2',
+      [ratingId, projectId]
+    );
+    
+    if (ratingCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Rating not found' });
+    }
+    
+    if (req.user.role !== 'admin' && req.user.role !== 'manager' && ratingCheck.rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    await pool.query('DELETE FROM project_ratings WHERE id = $1', [ratingId]);
+    res.json({ message: 'Rating deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete task rating
+app.delete('/api/tasks/:taskId/ratings/:ratingId', authenticateToken, async (req, res) => {
+  try {
+    const { taskId, ratingId } = req.params;
+    
+    // Check if rating exists and user is the author or admin
+    const ratingCheck = await pool.query(
+      'SELECT * FROM task_ratings WHERE id = $1 AND task_id = $2',
+      [ratingId, taskId]
+    );
+    
+    if (ratingCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Rating not found' });
+    }
+    
+    if (req.user.role !== 'admin' && req.user.role !== 'manager' && ratingCheck.rows[0].user_id !== req.user.id) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+    
+    await pool.query('DELETE FROM task_ratings WHERE id = $1', [ratingId]);
+    res.json({ message: 'Rating deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get ratings dashboard summary
+app.get('/api/ratings/dashboard/summary', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+    
+    const projectRatingsSummary = await pool.query(`
+      SELECT 
+        COUNT(*) as total_ratings,
+        AVG(rating) as average_rating,
+        COUNT(DISTINCT project_id) as projects_rated,
+        COUNT(DISTINCT user_id) as unique_raters
+      FROM project_ratings
+    `);
+    
+    const taskRatingsSummary = await pool.query(`
+      SELECT 
+        COUNT(*) as total_ratings,
+        AVG(rating) as average_rating,
+        COUNT(DISTINCT task_id) as tasks_rated,
+        COUNT(DISTINCT user_id) as unique_raters
+      FROM task_ratings
+    `);
+    
+    const recentProjectRatings = await pool.query(`
+      SELECT pr.*, p.name as project_name, u.name as user_name
+      FROM project_ratings pr
+      JOIN projects p ON pr.project_id = p.id
+      JOIN users u ON pr.user_id = u.id
+      ORDER BY pr.created_at DESC
+      LIMIT 10
+    `);
+    
+    const recentTaskRatings = await pool.query(`
+      SELECT tr.*, t.title as task_title, p.name as project_name, u.name as user_name
+      FROM task_ratings tr
+      JOIN tasks t ON tr.task_id = t.id
+      JOIN projects p ON t.project_id = p.id
+      JOIN users u ON tr.user_id = u.id
+      ORDER BY tr.created_at DESC
+      LIMIT 10
+    `);
+    
+    res.json({
+      project_ratings: projectRatingsSummary.rows[0],
+      task_ratings: taskRatingsSummary.rows[0],
+      recent_project_ratings: recentProjectRatings.rows,
+      recent_task_ratings: recentTaskRatings.rows
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -129,7 +448,6 @@ app.get('/api/users/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     
-    // Users can only access their own data unless they're admin
     if (req.user.role !== 'admin' && req.user.role !== 'manager' && req.user.id !== parseInt(id)) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -180,7 +498,6 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { name, role, company_id, is_active } = req.body;
     
-    // Users can only update their own data unless they're admin
     if (req.user.role !== 'admin' && req.user.role !== 'manager' && req.user.id !== parseInt(id)) {
       return res.status(403).json({ error: 'Access denied' });
     }
@@ -212,7 +529,6 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
 
     const { id } = req.params;
     
-    // Prevent admin from deleting themselves
     if (req.user.id === parseInt(id)) {
       return res.status(400).json({ error: 'Cannot delete your own account' });
     }
@@ -224,24 +540,6 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
     }
     
     res.json({ message: 'User deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Add this to your server.js after the login route
-app.get('/api/auth/validate', authenticateToken, async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, email, name, role, company_id, is_active FROM users WHERE id = $1 AND is_active = true',
-      [req.user.id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'User not found or inactive' });
-    }
-    
-    res.json({ user: result.rows[0] });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -334,7 +632,6 @@ app.delete('/api/companies/:id', authenticateToken, async (req, res) => {
 
     const { id } = req.params;
     
-    // Check if company has users
     const usersResult = await pool.query('SELECT id FROM users WHERE company_id = $1', [id]);
     if (usersResult.rows.length > 0) {
       return res.status(400).json({ error: 'Cannot delete company with associated users' });
@@ -371,7 +668,6 @@ app.get('/api/projects', authenticateToken, async (req, res) => {
       query += ' AND p.client_company_id = $1';
       params.push(companyResult.rows[0]?.company_id);
     } else if (req.user.role === 'developer') {
-      // Developers see projects they have tasks in
       query += ` AND p.id IN (
         SELECT DISTINCT project_id FROM tasks WHERE assigned_to = $1
       )`;
@@ -404,7 +700,6 @@ app.get('/api/projects/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Project not found' });
     }
     
-    // Check access permissions
     const project = result.rows[0];
     if (req.user.role === 'client') {
       const companyResult = await pool.query('SELECT company_id FROM users WHERE id = $1', [req.user.id]);
@@ -419,10 +714,9 @@ app.get('/api/projects/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create project (Admin only)
+// Create project (Admin/Manager only)
 app.post('/api/projects', authenticateToken, async (req, res) => {
   try {
-    // FIX: Changed from OR to AND
     if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
@@ -442,7 +736,7 @@ app.post('/api/projects', authenticateToken, async (req, res) => {
   }
 });
 
-// Update project (Admin only)
+// Update project (Admin/Manager only)
 app.put('/api/projects/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'manager' && req.user.role !== 'admin') {
@@ -470,17 +764,15 @@ app.put('/api/projects/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete project (Admin only)
+// Delete project (Admin/Manager only)
 app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
   try {
-    // FIX: Changed from OR to AND
     if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
 
     const { id } = req.params;
     
-    // Check if project has tasks
     const tasksResult = await pool.query('SELECT id FROM tasks WHERE project_id = $1', [id]);
     if (tasksResult.rows.length > 0) {
       return res.status(400).json({ error: 'Cannot delete project with associated tasks' });
@@ -512,7 +804,6 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
     `;
     const params = [];
     
-    // Role-based filtering
     if (req.user.role === 'developer') {
       query += ' AND t.assigned_to = $1';
       params.push(req.user.id);
@@ -548,7 +839,6 @@ app.get('/api/tasks/:id', authenticateToken, async (req, res) => {
       return res.status(404).json({ error: 'Task not found' });
     }
     
-    // Check access permissions
     const task = result.rows[0];
     if (req.user.role === 'developer' && task.assigned_to !== req.user.id) {
       return res.status(403).json({ error: 'Access denied' });
@@ -560,10 +850,9 @@ app.get('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create task (Admin only)
+// Create task (Admin/Manager only)
 app.post('/api/tasks', authenticateToken, async (req, res) => {
   try {
-    // FIX: Changed from OR to AND
     if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
@@ -589,7 +878,6 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
     const { id } = req.params;
     const { title, description, assigned_to, priority, deadline, status, progress_percentage } = req.body;
     
-    // Check if user has permission to update this task
     if (req.user.role === 'developer') {
       const taskResult = await pool.query('SELECT assigned_to FROM tasks WHERE id = $1', [id]);
       if (taskResult.rows.length === 0) {
@@ -618,10 +906,9 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete task (Admin only)
+// Delete task (Admin/Manager only)
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
-    // FIX: Changed from OR to AND
     if (req.user.role !== 'manager' && req.user.role !== 'admin') {
       return res.status(403).json({ error: 'Admin access required' });
     }
@@ -640,7 +927,7 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== SUB-TASK CRUD ROUTES ====================
+// ==================== SUB-TASK ROUTES ====================
 
 // Get sub-tasks for a task
 app.get('/api/tasks/:taskId/subtasks', authenticateToken, async (req, res) => {
@@ -721,181 +1008,11 @@ app.delete('/api/subtasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== COMMENT ROUTES ====================
-
-// Get comments for a project or task
-app.get('/api/comments', authenticateToken, async (req, res) => {
-  try {
-    const { project_id, task_id } = req.query;
-    
-    if (!project_id && !task_id) {
-      return res.status(400).json({ error: 'Either project_id or task_id is required' });
-    }
-
-    let query = `
-      SELECT c.*, u.name as author_name, u.role as author_role
-      FROM comments c
-      JOIN users u ON c.author_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
-
-    if (project_id) {
-      query += ' AND c.project_id = $1';
-      params.push(project_id);
-    } else if (task_id) {
-      query += ' AND c.task_id = $1';
-      params.push(task_id);
-    }
-
-    query += ' ORDER BY c.created_at DESC';
-
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// Create comment (Client only)
-app.post('/api/comments', authenticateToken, async (req, res) => {
-  try {
-    // Only clients can create comments
-    if (req.user.role !== 'client') {
-      return res.status(403).json({ error: 'Only clients can create comments' });
-    }
-
-    const { content, project_id, task_id } = req.body;
-
-    // Validate that either project_id or task_id is provided, but not both
-    if ((!project_id && !task_id) || (project_id && task_id)) {
-      return res.status(400).json({ error: 'Either project_id or task_id must be provided, but not both' });
-    }
-
-    // Verify that the client has access to the project/task
-    if (project_id) {
-      const projectCheck = await pool.query(
-        `SELECT p.* FROM projects p 
-         JOIN users u ON p.client_company_id = u.company_id 
-         WHERE p.id = $1 AND u.id = $2`,
-        [project_id, req.user.id]
-      );
-      if (projectCheck.rows.length === 0) {
-        return res.status(403).json({ error: 'Access denied to this project' });
-      }
-    } else if (task_id) {
-      const taskCheck = await pool.query(
-        `SELECT t.* FROM tasks t 
-         JOIN projects p ON t.project_id = p.id 
-         JOIN users u ON p.client_company_id = u.company_id 
-         WHERE t.id = $1 AND u.id = $2`,
-        [task_id, req.user.id]
-      );
-      if (taskCheck.rows.length === 0) {
-        return res.status(403).json({ error: 'Access denied to this task' });
-      }
-    }
-
-    const result = await pool.query(
-      `INSERT INTO comments (content, author_id, project_id, task_id) 
-       VALUES ($1, $2, $3, $4) 
-       RETURNING *`,
-      [content, req.user.id, project_id, task_id]
-    );
-
-    // Fetch the comment with author details
-    const commentWithAuthor = await pool.query(`
-      SELECT c.*, u.name as author_name, u.role as author_role
-      FROM comments c
-      JOIN users u ON c.author_id = u.id
-      WHERE c.id = $1
-    `, [result.rows[0].id]);
-
-    res.status(201).json(commentWithAuthor.rows[0]);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Update comment (Client only - only their own comments)
-app.put('/api/comments/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { content } = req.body;
-
-    // Check if comment exists and user is the author
-    const commentCheck = await pool.query(
-      'SELECT * FROM comments WHERE id = $1 AND author_id = $2',
-      [id, req.user.id]
-    );
-
-    if (commentCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Comment not found or access denied' });
-    }
-
-    const result = await pool.query(
-      `UPDATE comments 
-       SET content = $1, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $2 
-       RETURNING *`,
-      [content, id]
-    );
-
-    // Fetch the updated comment with author details
-    const commentWithAuthor = await pool.query(`
-      SELECT c.*, u.name as author_name, u.role as author_role
-      FROM comments c
-      JOIN users u ON c.author_id = u.id
-      WHERE c.id = $1
-    `, [id]);
-
-    res.json(commentWithAuthor.rows[0]);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Delete comment (Client only - only their own comments, or Admin)
-app.delete('/api/comments/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    let commentCheck;
-    if (req.user.role === 'admin' || req.user.role === 'manager') {
-      commentCheck = await pool.query('SELECT * FROM comments WHERE id = $1', [id]);
-    } else {
-      commentCheck = await pool.query(
-        'SELECT * FROM comments WHERE id = $1 AND author_id = $2',
-        [id, req.user.id]
-      );
-    }
-
-    if (commentCheck.rows.length === 0) {
-      return res.status(404).json({ error: 'Comment not found or access denied' });
-    }
-
-    await pool.query('DELETE FROM comments WHERE id = $1', [id]);
-    res.json({ message: 'Comment deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
 // ==================== HEALTH CHECK & DEBUG ROUTES ====================
 
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
-});
-
-// Debug endpoint to check users
-app.get('/api/debug/users', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT id, email, name, role, password FROM users');
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 // Database connection test
@@ -922,7 +1039,7 @@ app.get('/api/debug/db', async (req, res) => {
   }
 });
 
-// Test route to verify ratings endpoint
+// Test ratings endpoint
 app.get('/api/ratings/test', (req, res) => {
   res.json({ message: 'Ratings endpoint is working!' });
 });
@@ -932,5 +1049,5 @@ app.listen(PORT, () => {
   console.log(`📊 Database: ${process.env.DB_NAME}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
   console.log(`⭐ Ratings test: http://localhost:${PORT}/api/ratings/test`);
-  console.log(`🌟 Ratings dashboard: http://localhost:${PORT}/api/ratings/dashboard/summary`);
+  console.log(`📈 Ratings dashboard: http://localhost:${PORT}/api/ratings/dashboard/summary`);
 });

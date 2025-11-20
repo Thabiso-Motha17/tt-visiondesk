@@ -1,4 +1,5 @@
-import React, { useEffect, useState, type JSX } from 'react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import React, { useEffect, useState, } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store.ts';
 import { fetchTasks } from '../../store/slices/taskSlice';
@@ -9,13 +10,23 @@ import {
   FaClock, 
   FaExclamationTriangle,
   FaSearch,
-  FaFilter,
   FaEye,
-  FaDownload,
   FaTimes,
-  FaRoad
+  FaStar,
+  FaRegStar
 } from 'react-icons/fa';
 import styles from './ClientTaskPage.module.css';
+
+// Import ratings functionality
+import {
+  fetchTaskRatings,
+  addTaskRating,
+  selectTaskRatings,
+  selectTaskAverageRating,
+  selectUserTaskRating,
+  selectTaskRatingByType,
+  type TaskRating
+} from '../../store/slices/ratingsSlice';
 
 interface Task {
   id: number;
@@ -34,11 +45,6 @@ interface Task {
   updated_at: string;
 }
 
-interface Project {
-  id: number;
-  name: string;
-}
-
 const ClientTaskPage: React.FC = () => {
   const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
   const { projects, loading: projectsLoading } = useSelector((state: RootState) => state.projects);
@@ -50,6 +56,7 @@ const ClientTaskPage: React.FC = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState<Task | null>(null);
 
   useEffect(() => {
     dispatch(fetchTasks() as any);
@@ -57,8 +64,8 @@ const ClientTaskPage: React.FC = () => {
   }, [dispatch]);
 
   // Filter tasks for client's projects
-  const clientTasks = tasks.filter(task => 
-    projects.some(project => project.id === (task as any).project_id)
+  const clientTasks = tasks.filter((task: Task) => 
+    projects.some(project => project.id === task.project_id)
   );
 
   const filteredTasks = clientTasks.filter(task => {
@@ -75,6 +82,39 @@ const ClientTaskPage: React.FC = () => {
     completed: clientTasks.filter(task => task.status === 'completed').length,
     inProgress: clientTasks.filter(task => task.status === 'in_progress').length,
     blocked: clientTasks.filter(task => task.status === 'blocked').length,
+  };
+
+  // Fetch ratings for all tasks when component mounts
+  useEffect(() => {
+    if (filteredTasks.length > 0 && user?.id) {
+      filteredTasks.forEach(task => {
+        dispatch(fetchTaskRatings(task.id) as any);
+      });
+    }
+  }, [dispatch, filteredTasks, user?.id]);
+
+  // Rating Functions
+  const handleOpenRatingModal = (task: Task) => {
+    setShowRatingModal(task);
+  };
+
+  const handleSubmitRating = async (taskId: number, ratingData: {
+    rating: number;
+    comment: string;
+    rating_type: 'quality' | 'communication' | 'timeliness' | 'overall';
+  }) => {
+    try {
+      await dispatch(addTaskRating({
+        taskId,
+        ratingData
+      }) as any);
+      
+      alert('Thank you for your rating!');
+      setShowRatingModal(null);
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      alert('There was an error submitting your rating. Please try again.');
+    }
   };
 
   // Additional Actions
@@ -198,6 +238,7 @@ const ClientTaskPage: React.FC = () => {
               task={task}
               onViewDetails={handleViewTaskDetails}
               onRequestClarification={handleRequestClarification}
+              onRateTask={handleOpenRatingModal}
             />
           ))}
         </div>
@@ -216,6 +257,16 @@ const ClientTaskPage: React.FC = () => {
           onClose={() => setSelectedTask(null)}
           onDownloadDetails={() => handleDownloadTaskDetails(selectedTask)}
           onRequestClarification={() => handleRequestClarification(selectedTask)}
+          onRateTask={() => handleOpenRatingModal(selectedTask)}
+        />
+      )}
+
+      {/* Task Rating Modal */}
+      {showRatingModal && (
+        <TaskRatingModal
+          task={showRatingModal}
+          onClose={() => setShowRatingModal(null)}
+          onSubmit={handleSubmitRating}
         />
       )}
     </div>
@@ -227,13 +278,32 @@ interface TaskCardProps {
   task: Task;
   onViewDetails: (task: Task) => void;
   onRequestClarification: (task: Task) => void;
+  onRateTask: (task: Task) => void;
 }
 
 const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onViewDetails,
-  onRequestClarification
+  onRequestClarification,
+  onRateTask
 }) => {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const taskRatings = useSelector((state: RootState) => 
+    selectTaskRatings(state, task.id)
+  );
+  const averageRating = useSelector((state: RootState) => 
+    selectTaskAverageRating(state, task.id)
+  );
+  const userQualityRating = useSelector((state: RootState) => 
+    selectUserTaskRating(state, task.id, user?.id || 0, 'quality')
+  );
+
+  // Fetch ratings when component mounts
+  useEffect(() => {
+    dispatch(fetchTaskRatings(task.id) as any);
+  }, [dispatch, task.id]);
+
   return (
     <div className={styles.taskCard}>
       <div className={styles.taskHeader}>
@@ -245,6 +315,13 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <span className={`${styles.priorityBadge} ${styles[task.priority]}`}>
             {task.priority}
           </span>
+          {/* Average Rating Display */}
+          {averageRating > 0 && (
+            <div className={styles.averageRating}>
+              <FaStar className={styles.starIcon} />
+              <span>{averageRating.toFixed(1)}</span>
+            </div>
+          )}
         </div>
       </div>
 
@@ -284,6 +361,20 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
       </div>
 
+      {/* User's Current Rating Display */}
+      {userQualityRating && (
+        <div className={styles.userRating}>
+          <span>Your quality rating: </span>
+          <div className={styles.userRatingStars}>
+            {[1, 2, 3, 4, 5].map(star => (
+              <span key={star} className={star <= userQualityRating.rating ? styles.starFilled : styles.starEmpty}>
+                {star <= userQualityRating.rating ? <FaStar /> : <FaRegStar />}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Client Actions */}
       <div className={styles.taskActions}>
         <button 
@@ -293,10 +384,10 @@ const TaskCard: React.FC<TaskCardProps> = ({
           <FaEye /> Details
         </button>
         <button 
-          className={styles.btnWarning}
-          onClick={() => onRequestClarification(task)}
+          className={styles.btnSuccess}
+          onClick={() => onRateTask(task)}
         >
-          <FaExclamationTriangle /> Request Clarification
+          <FaStar /> {userQualityRating ? 'Update Rating' : 'Rate Task'}
         </button>
       </div>
     </div>
@@ -309,14 +400,52 @@ interface TaskDetailsModalProps {
   onClose: () => void;
   onDownloadDetails: () => void;
   onRequestClarification: () => void;
+  onRateTask: () => void;
 }
 
 const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   task,
   onClose,
   onDownloadDetails,
-  onRequestClarification
+  onRequestClarification,
+  onRateTask
 }) => {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const taskRatings = useSelector((state: RootState) => 
+    selectTaskRatings(state, task.id)
+  );
+  const averageRating = useSelector((state: RootState) => 
+    selectTaskAverageRating(state, task.id)
+  );
+  const userQualityRating = useSelector((state: RootState) => 
+    selectUserTaskRating(state, task.id, user?.id || 0, 'quality')
+  );
+  const userCommunicationRating = useSelector((state: RootState) => 
+    selectUserTaskRating(state, task.id, user?.id || 0, 'communication')
+  );
+  const userTimelinessRating = useSelector((state: RootState) => 
+    selectUserTaskRating(state, task.id, user?.id || 0, 'timeliness')
+  );
+
+  // Fetch ratings when modal opens
+  useEffect(() => {
+    dispatch(fetchTaskRatings(task.id) as any);
+  }, [dispatch, task.id]);
+
+  // Calculate average ratings by type
+  const getAverageRatingByType = (ratingType: string) => {
+    const typeRatings = taskRatings.filter(rating => rating.rating_type === ratingType);
+    if (typeRatings.length === 0) return 0;
+    
+    const sum = typeRatings.reduce((total, rating) => total + rating.rating, 0);
+    return sum / typeRatings.length;
+  };
+
+  const qualityAvg = getAverageRatingByType('quality');
+  const communicationAvg = getAverageRatingByType('communication');
+  const timelinessAvg = getAverageRatingByType('timeliness');
+
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
@@ -328,6 +457,63 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
         </div>
 
         <div className={styles.modalContent}>
+          {/* Rating Summary */}
+          {averageRating > 0 && (
+            <div className={styles.ratingSummary}>
+              <h3>Task Ratings</h3>
+              <div className={styles.ratingOverview}>
+                <div className={styles.averageRating}>
+                  <span className={styles.ratingValue}>{averageRating.toFixed(1)}</span>
+                  <div className={styles.stars}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span key={star} className={star <= Math.round(averageRating) ? styles.starFilled : styles.starEmpty}>
+                        {star <= Math.round(averageRating) ? <FaStar /> : <FaRegStar />}
+                      </span>
+                    ))}
+                  </div>
+                  <span className={styles.ratingCount}>({taskRatings.length} ratings)</span>
+                </div>
+              </div>
+
+              {/* Rating Breakdown */}
+              <div className={styles.ratingBreakdown}>
+                <div className={styles.ratingType}>
+                  <span>Quality:</span>
+                  <div className={styles.ratingStars}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span key={star} className={star <= Math.round(qualityAvg) ? styles.starFilled : styles.starEmpty}>
+                        {star <= Math.round(qualityAvg) ? <FaStar /> : <FaRegStar />}
+                      </span>
+                    ))}
+                    <span className={styles.ratingValue}>({qualityAvg.toFixed(1)})</span>
+                  </div>
+                </div>
+                <div className={styles.ratingType}>
+                  <span>Communication:</span>
+                  <div className={styles.ratingStars}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span key={star} className={star <= Math.round(communicationAvg) ? styles.starFilled : styles.starEmpty}>
+                        {star <= Math.round(communicationAvg) ? <FaStar /> : <FaRegStar />}
+                      </span>
+                    ))}
+                    <span className={styles.ratingValue}>({communicationAvg.toFixed(1)})</span>
+                  </div>
+                </div>
+                <div className={styles.ratingType}>
+                  <span>Timeliness:</span>
+                  <div className={styles.ratingStars}>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <span key={star} className={star <= Math.round(timelinessAvg) ? styles.starFilled : styles.starEmpty}>
+                        {star <= Math.round(timelinessAvg) ? <FaStar /> : <FaRegStar />}
+                      </span>
+                    ))}
+                    <span className={styles.ratingValue}>({timelinessAvg.toFixed(1)})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className={styles.taskInfo}>
             <div className={styles.infoSection}>
               <h3>Description</h3>
@@ -395,13 +581,203 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
           <button className={styles.btnSecondary} onClick={onClose}>
             Close
           </button>
-          <button className={styles.btnWarning} onClick={onRequestClarification}>
-            <FaExclamationTriangle /> Request Clarification
-          </button>
-          <button className={styles.btnPrimary} onClick={onDownloadDetails}>
-            <FaDownload /> Download Details
+          <button className={styles.btnSuccess} onClick={onRateTask}>
+            <FaStar /> {userQualityRating ? 'Update Rating' : 'Rate Task'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+};
+
+// Task Rating Modal Component
+interface TaskRatingModalProps {
+  task: Task;
+  onClose: () => void;
+  onSubmit: (taskId: number, ratingData: {
+    rating: number;
+    comment: string;
+    rating_type: 'quality' | 'communication' | 'timeliness' | 'overall';
+  }) => void;
+}
+
+const TaskRatingModal: React.FC<TaskRatingModalProps> = ({
+  task,
+  onClose,
+  onSubmit
+}) => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const userQualityRating = useSelector((state: RootState) => 
+    selectUserTaskRating(state, task.id, user?.id || 0, 'quality')
+  );
+  const userCommunicationRating = useSelector((state: RootState) => 
+    selectUserTaskRating(state, task.id, user?.id || 0, 'communication')
+  );
+  const userTimelinessRating = useSelector((state: RootState) => 
+    selectUserTaskRating(state, task.id, user?.id || 0, 'timeliness')
+  );
+
+  const [ratings, setRatings] = useState({
+    quality: userQualityRating?.rating || 0,
+    communication: userCommunicationRating?.rating || 0,
+    timeliness: userTimelinessRating?.rating || 0,
+  });
+  const [comments, setComments] = useState({
+    quality: userQualityRating?.comment || '',
+    communication: userCommunicationRating?.comment || '',
+    timeliness: userTimelinessRating?.comment || '',
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [hoverRatings, setHoverRatings] = useState({
+    quality: 0,
+    communication: 0,
+    timeliness: 0,
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Check if at least one rating is provided
+    if (ratings.quality === 0 && ratings.communication === 0 && ratings.timeliness === 0) {
+      alert('Please provide at least one rating');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      // Submit each rating type that has a rating
+      const submitPromises = [];
+      
+      if (ratings.quality > 0) {
+        submitPromises.push(
+          onSubmit(task.id, {
+            rating: ratings.quality,
+            comment: comments.quality,
+            rating_type: 'quality'
+          })
+        );
+      }
+      
+      if (ratings.communication > 0) {
+        submitPromises.push(
+          onSubmit(task.id, {
+            rating: ratings.communication,
+            comment: comments.communication,
+            rating_type: 'communication'
+          })
+        );
+      }
+      
+      if (ratings.timeliness > 0) {
+        submitPromises.push(
+          onSubmit(task.id, {
+            rating: ratings.timeliness,
+            comment: comments.timeliness,
+            rating_type: 'timeliness'
+          })
+        );
+      }
+      
+      await Promise.all(submitPromises);
+    } catch (error) {
+      console.error('Error submitting ratings:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const updateRating = (type: keyof typeof ratings, rating: number) => {
+    setRatings(prev => ({
+      ...prev,
+      [type]: rating
+    }));
+  };
+
+  const updateComment = (type: keyof typeof comments, comment: string) => {
+    setComments(prev => ({
+      ...prev,
+      [type]: comment
+    }));
+  };
+
+  const updateHoverRating = (type: keyof typeof hoverRatings, rating: number) => {
+    setHoverRatings(prev => ({
+      ...prev,
+      [type]: rating
+    }));
+  };
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={`${styles.modal} ${styles.large}`}>
+        <div className={styles.modalHeader}>
+          <h2>Rate Task: {task.title}</h2>
+          <button className={styles.closeButton} onClick={onClose}>
+            <FaTimes />
+          </button>
+        </div>
+
+        <form className={styles.ratingForm} onSubmit={handleSubmit}>
+          {/* Quality Rating */}
+          <div className={styles.ratingTypeSection}>
+            <h4>Quality of Work</h4>
+            <div className={styles.formGroup}>
+              <label>How would you rate the quality of work?</label>
+              <div className={styles.starRating}>
+                {[1, 2, 3, 4, 5].map(star => (
+                  <button
+                    key={star}
+                    type="button"
+                    className={`${styles.star} ${star <= (hoverRatings.quality || ratings.quality) ? styles.active : ''}`}
+                    onClick={() => updateRating('quality', star)}
+                    onMouseEnter={() => updateHoverRating('quality', star)}
+                    onMouseLeave={() => updateHoverRating('quality', 0)}
+                    disabled={submitting}
+                  >
+                    <FaStar />
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className={styles.formGroup}>
+              <label>Comments on Quality (Optional)</label>
+              <textarea
+                placeholder="Share your thoughts on the quality of work..."
+                rows={2}
+                value={comments.quality}
+                onChange={(e) => updateComment('quality', e.target.value)}
+                disabled={submitting}
+              />
+            </div>
+          </div>
+
+          <div className={styles.formActions}>
+            <button
+              type="button"
+              className={styles.btnSecondary}
+              onClick={onClose}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={styles.btnPrimary}
+              disabled={submitting || (ratings.quality === 0 )}
+            >
+              {submitting ? (
+                <>
+                  <div className={styles.spinner}></div>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <FaStar /> Submit Ratings
+                </>
+              )}
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
