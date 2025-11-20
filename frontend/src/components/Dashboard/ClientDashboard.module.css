@@ -1461,3 +1461,813 @@
     gap: 8px;
   }
 }
+
+/* ClientDashboard.module.css */
+
+/* Modal Styles */
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.ratingModal {
+  background: #ffffff; /* Pure white background */
+  border-radius: 12px;
+  width: 100%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  color: #2c3e50; /* Dark text color */
+}
+
+.modalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem;
+  border-bottom: 1px solid #e0e0e0; /* Light border */
+  background: #ffffff;
+}
+
+.modalHeader h2 {
+  margin: 0;
+  color: #2c3e50; /* Dark text */
+  font-weight: 600;
+}
+
+.closeButton {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: #6c757d; /* Medium gray */
+  cursor: pointer;
+  padding: 0.25rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.closeButton:hover {
+  background: #f8f9fa; /* Light gray on hover */
+  color: #2c3e50; /* Dark text on hover */
+}
+
+.modalTabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0; /* Light border */
+  background: #ffffff;
+}
+
+.tabButton {
+  flex: 1;
+  padding: 1rem;
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+  color: #6c757d; /* Medium gray */
+  transition: all 0.2s;
+  background: #ffffff;
+}
+
+.tabButton.activeTab {
+  color: #667eea; /* Primary color */
+  border-bottom-color: rgb(12, 121, 93);
+  background: #ffffff;
+}
+
+.modalContent {
+  padding: 1.5rem;
+  background: #ffffff;
+  color: #2c3e50; /* Dark text */
+}
+
+/* Rate Tab Styles */
+.projectSelection {
+  margin-bottom: 1.5rem;
+  background: #ffffff;
+}
+
+.projectSelection label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50; /* Dark text */
+}
+
+.projectSelection select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0; /* Light border */
+  border-radius: 6px;
+  background: #ffffff;
+  color: #2c3e50; /* Dark text */
+  font-size: 1rem;
+}
+
+.projectSelection select:focus {
+  outline: none;
+  border-color: #667eea; /* Primary color */
+}
+
+.projectInfo {
+  background: #f8f9fa; /* Light gray background */
+  padding: 1rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  border: 1px solid #e0e0e0;
+}
+
+.projectInfo h3 {
+  margin: 0 0 0.5rem 0;
+  color: #2c3e50; /* Dark text */
+}
+
+.projectInfo p {
+  margin: 0 0 1rem 0;
+  color: #6c757d; /* Medium gray */
+  font-size: 0.9rem;
+}
+
+.ratingSection {
+  background: #ffffff;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0; /* Light border */
+}
+
+.ratingStars p {
+  margin-bottom: 1rem;
+  font-weight: 500;
+  color: #2c3e50; /* Dark text */
+}
+
+.starsInput {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.starBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 2rem;
+  padding: 0.25rem;
+  transition: transform 0.2s;
+}
+
+.starBtn:hover {
+  transform: scale(1.2);
+}
+
+.filledStar {
+  color: #FFD700; /* Gold for filled stars */
+}
+
+.emptyStar {
+  color: #E0E0E0; /* Light gray for empty stars */
+}
+
+.ratingText {
+  color: #667eea; /* Primary color */
+  font-weight: 500;
+  display: block;
+  margin-top: 0.5rem;
+}
+
+.recommendation {
+  margin: 1.5rem 0;
+}
+
+.recommendation p {
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  color: #2c3e50; /* Dark text */
+}
+
+.recommendOptions {
+  display: flex;
+  gap: 1rem;
+}
+
+.recommendBtn {
+  padding: 0.5rem 1.5rem;
+  border: 2px solid #e0e0e0; /* Light border */
+  background: #ffffff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #2c3e50; /* Dark text */
+}
+
+.recommendBtn.active {
+  border-color: #667eea; /* Primary color */
+  background: #667eea;
+  color: white;
+}
+
+.recommendBtn:hover {
+  border-color: #5a6fd8; /* Darker primary */
+}
+
+.commentSection {
+  margin-bottom: 1.5rem;
+}
+
+.commentSection label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #2c3e50; /* Dark text */
+}
+
+.commentSection textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0; /* Light border */
+  border-radius: 6px;
+  background: #ffffff;
+  color: #2c3e50; /* Dark text */
+  resize: vertical;
+  font-family: inherit;
+  min-height: 100px;
+}
+
+.commentSection textarea:focus {
+  outline: none;
+  border-color: #667eea; /* Primary color */
+}
+
+.ratingActions {
+  display: flex;
+  gap: 1rem;
+}
+
+.submitRatingBtn {
+  padding: 0.75rem 1.5rem;
+  background: #4CAF50; /* Success green */
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  flex: 2;
+  transition: background-color 0.2s;
+}
+
+.submitRatingBtn:hover {
+  background: #45a049; /* Darker green */
+}
+
+.cancelRatingBtn {
+  padding: 0.75rem 1.5rem;
+  background: #f8f9fa; /* Light gray */
+  color: #2c3e50; /* Dark text */
+  border: 1px solid #e0e0e0; /* Light border */
+  border-radius: 6px;
+  cursor: pointer;
+  flex: 1;
+  transition: background-color 0.2s;
+}
+
+.cancelRatingBtn:hover {
+  background: #e9ecef; /* Slightly darker gray */
+}
+
+/* View Tab Styles */
+.viewTab h3 {
+  margin-bottom: 1rem;
+  color: #2c3e50; /* Dark text */
+  background: #ffffff;
+}
+
+.ratingsList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background: #ffffff;
+}
+
+.ratingItem {
+  background: #f8f9fa; /* Light gray background */
+  border-radius: 8px;
+  padding: 1.5rem;
+  border: 1px solid #e0e0e0; /* Light border */
+}
+
+.ratingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.ratingHeader h4 {
+  margin: 0;
+  color: #2c3e50; /* Dark text */
+}
+
+.ratingDate {
+  color: #6c757d; /* Medium gray */
+  font-size: 0.8rem;
+}
+
+.ratingDisplay {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ratingValue {
+  font-weight: 500;
+  color: #667eea; /* Primary color */
+}
+
+.ratingComment {
+  font-style: italic;
+  color: #6c757d; /* Medium gray */
+  margin-bottom: 1rem;
+  padding-left: 1rem;
+  border-left: 3px solid #e0e0e0; /* Light border */
+}
+
+.recommendationDisplay {
+  margin-bottom: 0;
+}
+
+.recommendation {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.recommendation.recommended {
+  background: #E8F5E8;
+  color: #2E7D32; /* Dark green */
+}
+
+.recommendation.notRecommended {
+  background: #FFEBEE;
+  color: #C62828; /* Dark red */
+}
+
+/* Empty States */
+.noProjects, .noRatings {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: #6c757d; /* Medium gray */
+  background: #f8f9fa; /* Light gray */
+  border-radius: 8px;
+  border: 2px dashed #e0e0e0; /* Light border */
+}
+
+.noProjects p, .noRatings p {
+  margin: 0;
+  font-style: italic;
+}
+
+/* Progress Bar in Modal */
+.progressBar {
+  height: 8px;
+  background: #e0e0e0; /* Light gray */
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea, #764ba2); /* Primary gradient */
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .modalOverlay {
+    padding: 0.5rem;
+  }
+  
+  .ratingModal {
+    max-height: 95vh;
+  }
+  
+  .modalHeader {
+    padding: 1rem;
+  }
+  
+  .modalContent {
+    padding: 1rem;
+  }
+  
+  .starsInput {
+    gap: 0.25rem;
+  }
+  
+  .starBtn {
+    font-size: 1.5rem;
+  }
+  
+  .ratingActions {
+    flex-direction: column;
+  }
+  
+  .recommendOptions {
+    flex-direction: column;
+  }
+}
+
+/* Update the feature card to use star icon */
+.featureCard:nth-child(2) .featureIcon {
+  color: #FFD700; /* Gold color for star */
+}
+
+/* Ensure all text in modal is dark */
+.ratingModal,
+.ratingModal *:not(.filledStar):not(.emptyStar) {
+  color: #2c3e50 !important; /* Dark text for everything except stars */
+}
+
+/* Specific overrides for any light text that might be inherited */
+.modalContent h1,
+.modalContent h2,
+.modalContent h3,
+.modalContent h4,
+.modalContent h5,
+.modalContent h6,
+.modalContent p,
+.modalContent span,
+.modalContent label {
+  color: #2c3e50 !important; /* Dark text */
+}
+
+/* Input placeholder text */
+.modalContent ::placeholder {
+  color: #a0aec0 !important; /* Lighter gray for placeholders */
+}
+
+/* Selection dropdown text */
+.modalContent select option {
+  color: #2c3e50 !important; /* Dark text for dropdown options */
+  background: #ffffff !important; /* White background for options */
+}
+
+/* Ratings Styles */
+.statIcon.ratings {
+  background: linear-gradient(135deg, #FFD700, #FFA000);
+}
+
+.statIcon.feedback {
+  background: linear-gradient(135deg, #4FC3F7, #0288D1);
+}
+
+.filledStar {
+  color: #FFD700;
+}
+
+.emptyStar {
+  color: #E0E0E0;
+}
+
+.ratingInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+}
+
+.ratingStars {
+  display: flex;
+  gap: 0.1rem;
+}
+
+.ratingValue {
+  font-weight: 600;
+  color: #FFD700;
+}
+
+/* Ratings View Styles */
+.ratingsView {
+  padding: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.viewHeader {
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.backButton {
+  background: none;
+  border: none;
+  color: #667eea;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  transition: background-color 0.2s;
+}
+
+.backButton:hover {
+  background: #f8f9fa;
+}
+
+.ratingsOverview {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.overviewCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.overviewIcon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+}
+
+.overviewContent h3 {
+  font-size: 2rem;
+  margin: 0;
+  color: #2c3e50;
+}
+
+.overviewContent p {
+  margin: 0;
+  color: #6c757d;
+}
+
+.ratingsControls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 300px;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+}
+
+.filterButtons {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.filterBtn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e0e0e0;
+  background: white;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filterBtn.active {
+  background: #667eea;
+  color: white;
+  border-color: #667eea;
+}
+
+.ratingsList h2 {
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.ratingsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 1.5rem;
+}
+
+.ratingCard {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e0e0e0;
+}
+
+.ratingHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1rem;
+}
+
+.projectInfo h4 {
+  margin: 0 0 0.25rem 0;
+  color: #2c3e50;
+}
+
+.ratingDate {
+  color: #6c757d;
+  font-size: 0.8rem;
+}
+
+.ratingBadge {
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.ratingDetails {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.stars {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.recommendation {
+  padding: 0.25rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.recommendation.recommended {
+  background: #E8F5E8;
+  color: #2E7D32;
+}
+
+.recommendation.notRecommended {
+  background: #FFEBEE;
+  color: #C62828;
+}
+
+.clientInfo {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.comment {
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 4px solid #667eea;
+}
+
+.comment p {
+  margin: 0;
+  font-style: italic;
+  color: #495057;
+  line-height: 1.5;
+}
+
+/* Rating Distribution */
+.ratingDistribution {
+  margin-top: 3rem;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.ratingDistribution h2 {
+  margin-bottom: 1.5rem;
+  color: #2c3e50;
+}
+
+.distributionBars {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.distributionBar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.barLabel {
+  display: flex;
+  justify-content: space-between;
+  width: 120px;
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.barTrack {
+  flex: 1;
+  height: 20px;
+  background: #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 10px;
+  transition: width 0.3s ease;
+}
+
+.barPercentage {
+  width: 60px;
+  text-align: right;
+  font-weight: 600;
+  color: #495057;
+}
+
+.noData {
+  text-align: center;
+  padding: 3rem;
+  color: #6c757d;
+  background: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #e0e0e0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .ratingsControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .searchBox {
+    min-width: auto;
+  }
+  
+  .filterButtons {
+    justify-content: center;
+  }
+  
+  .ratingsGrid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ratingHeader {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .ratingDetails {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+  
+  .distributionBar {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: stretch;
+  }
+  
+  .barLabel {
+    width: auto;
+    justify-content: space-between;
+  }
+}

@@ -14,9 +14,21 @@ import {
   FaPlus,
   FaTimes,
   FaSave,
-  FaEye
+  FaEye,
+  FaStar,
+  FaRegStar
 } from 'react-icons/fa';
 import styles from './ClientProjectPage.module.css';
+
+// Import ratings functionality
+import {
+  fetchProjectRatings,
+  addProjectRating,
+  selectProjectRatings,
+  selectProjectAverageRating,
+  selectUserProjectRating,
+  type ProjectRating
+} from '../../store/slices/ratingsSlice';
 
 interface Project {
   id: number;
@@ -67,11 +79,21 @@ const ClientProjectPage: React.FC = () => {
   
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [projectDetails, setProjectDetails] = useState<Project | null>(null);
+  const [showRatingModal, setShowRatingModal] = useState<Project | null>(null);
 
   useEffect(() => {
     dispatch(fetchProjects() as any);
     dispatch(fetchTasks() as any);
   }, [dispatch]);
+
+  // Fetch ratings for all projects when component mounts
+  useEffect(() => {
+    if (projects.length > 0 && user?.id) {
+      projects.forEach(project => {
+        dispatch(fetchProjectRatings(project.id) as any);
+      });
+    }
+  }, [dispatch, projects, user?.id]);
 
   const getProjectStats = (projectId: number) => {
     const projectTasks = tasks.filter(task => (task as any).project_id === projectId);
@@ -106,6 +128,30 @@ const ClientProjectPage: React.FC = () => {
   // Project Details Functions
   const handleViewProjectDetails = (project: Project) => {
     setProjectDetails(project);
+  };
+
+  // Rating Functions
+  const handleOpenRatingModal = (project: Project) => {
+    setShowRatingModal(project);
+  };
+
+  const handleSubmitRating = async (projectId: number, rating: number, comment: string, wouldRecommend: boolean) => {
+    try {
+      await dispatch(addProjectRating({
+        projectId,
+        ratingData: {
+          rating,
+          comment,
+          would_recommend: wouldRecommend
+        }
+      }) as any);
+      
+      alert('Thank you for your rating!');
+      setShowRatingModal(null);
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+      alert('There was an error submitting your rating. Please try again.');
+    }
   };
 
   const handleDownloadReport = (projectId: number) => {
@@ -189,6 +235,7 @@ const ClientProjectPage: React.FC = () => {
               tasks={tasks}
               onViewDetails={handleViewProjectDetails}
               onRequestUpdate={handleRequestUpdate}
+              onRateProject={handleOpenRatingModal}
             />
           ))}
         </div>
@@ -216,6 +263,7 @@ const ClientProjectPage: React.FC = () => {
           onClose={() => setProjectDetails(null)}
           onDownloadReport={() => handleDownloadReport(projectDetails.id)}
           onRequestUpdate={() => handleRequestUpdate(projectDetails.id)}
+          onRateProject={() => handleOpenRatingModal(projectDetails)}
         />
       )}
 
@@ -224,6 +272,15 @@ const ClientProjectPage: React.FC = () => {
         <ProjectRequestModal
           onClose={() => setShowRequestModal(false)}
           onSubmit={handleSubmitProjectRequest}
+        />
+      )}
+
+      {/* Rating Modal */}
+      {showRatingModal && (
+        <ProjectRatingModal
+          project={showRatingModal}
+          onClose={() => setShowRatingModal(null)}
+          onSubmit={handleSubmitRating}
         />
       )}
     </div>
@@ -236,14 +293,28 @@ interface ProjectCardProps {
   tasks: Task[];
   onViewDetails: (project: Project) => void;
   onRequestUpdate: (projectId: number) => void;
+  onRateProject: (project: Project) => void;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   tasks,
   onViewDetails,
-  onRequestUpdate
+  onRequestUpdate,
+  onRateProject
 }) => {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const projectRatings = useSelector((state: RootState) => 
+    selectProjectRatings(state, project.id)
+  );
+  const averageRating = useSelector((state: RootState) => 
+    selectProjectAverageRating(state, project.id)
+  );
+  const userRating = useSelector((state: RootState) => 
+    selectUserProjectRating(state, project.id, user?.id || 0)
+  );
+
   const stats = {
     total: tasks.filter(task => (task as any).project_id === project.id).length,
     completed: tasks.filter(task => 
@@ -269,13 +340,28 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     )
     .slice(0, 2);
 
+  // Fetch ratings when component mounts
+  useEffect(() => {
+    dispatch(fetchProjectRatings(project.id) as any);
+  }, [dispatch, project.id]);
+
   return (
     <div className={styles.projectCard}>
       <div className={styles.projectHeader}>
         <h3>{project.name}</h3>
-        <span className={`${styles.statusBadge} ${styles[project.status]}`}>
-          {project.status}
-        </span>
+        <div className={styles.headerRight}>
+          <span className={`${styles.statusBadge} ${styles[project.status]}`}>
+            {project.status}
+          </span>
+          {/* Average Rating Display */}
+          {averageRating > 0 && (
+            <div className={styles.averageRating}>
+              <FaStar className={styles.starIcon} />
+              <span>{averageRating.toFixed(1)}</span>
+              <span className={styles.ratingCount}>({projectRatings.length})</span>
+            </div>
+          )}
+        </div>
       </div>
 
       <p className={styles.projectDescription}>{project.description}</p>
@@ -354,7 +440,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         >
           <FaBell /> Request Update
         </button>
+        <button 
+          className={styles.btnSuccess}
+          onClick={() => onRateProject(project)}
+        >
+          <FaStar /> {userRating ? 'Update Rating' : 'Rate Project'}
+        </button>
       </div>
+
+      {/* User's Current Rating Display */}
+      {userRating && (
+        <div className={styles.userRating}>
+          <span>Your rating: </span>
+          <div className={styles.userRatingStars}>
+            {[1, 2, 3, 4, 5].map(star => (
+              <span key={star} className={star <= userRating.rating ? styles.starFilled : styles.starEmpty}>
+                {star <= userRating.rating ? <FaStar /> : <FaRegStar />}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -366,6 +472,7 @@ interface ProjectDetailsModalProps {
   onClose: () => void;
   onDownloadReport: () => void;
   onRequestUpdate: () => void;
+  onRateProject: () => void;
 }
 
 const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
@@ -373,8 +480,21 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   tasks,
   onClose,
   onDownloadReport,
-  onRequestUpdate
+  onRequestUpdate,
+  onRateProject
 }) => {
+  const dispatch = useDispatch();
+  const { user } = useSelector((state: RootState) => state.auth);
+  const projectRatings = useSelector((state: RootState) => 
+    selectProjectRatings(state, project.id)
+  );
+  const averageRating = useSelector((state: RootState) => 
+    selectProjectAverageRating(state, project.id)
+  );
+  const userRating = useSelector((state: RootState) => 
+    selectUserProjectRating(state, project.id, user?.id || 0)
+  );
+
   const stats = {
     total: tasks.length,
     completed: tasks.filter(task => task.status === 'completed').length,
@@ -387,6 +507,11 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
 
   const recentTasks = tasks.slice(0, 5);
 
+  // Fetch ratings when modal opens
+  useEffect(() => {
+    dispatch(fetchProjectRatings(project.id) as any);
+  }, [dispatch, project.id]);
+
   return (
     <div className={styles.modalOverlay}>
       <div className={`${styles.modal} ${styles.large}`}>
@@ -398,6 +523,30 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         </div>
 
         <div className={styles.modalContent}>
+          {/* Rating Summary */}
+          <div className={styles.ratingSummary}>
+            <div className={styles.ratingOverview}>
+              <h3>Project Rating</h3>
+              {averageRating > 0 ? (
+                <div className={styles.ratingDisplay}>
+                  <div className={styles.averageRating}>
+                    <span className={styles.ratingValue}>{averageRating.toFixed(1)}</span>
+                    <div className={styles.stars}>
+                      {[1, 2, 3, 4, 5].map(star => (
+                        <span key={star} className={star <= Math.round(averageRating) ? styles.starFilled : styles.starEmpty}>
+                          {star <= Math.round(averageRating) ? <FaStar /> : <FaRegStar />}
+                        </span>
+                      ))}
+                    </div>
+                    <span className={styles.ratingCount}>({projectRatings.length} ratings)</span>
+                  </div>
+                </div>
+              ) : (
+                <p>No ratings yet</p>
+              )}
+            </div>
+          </div>
+
           <div className={styles.projectInfo}>
             <div className={styles.infoSection}>
               <h3>Description</h3>
@@ -489,8 +638,8 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
           <button className={styles.btnWarning} onClick={onRequestUpdate}>
             <FaBell /> Request Update
           </button>
-          <button className={styles.btnPrimary} onClick={onDownloadReport}>
-            <FaDownload /> Download Report
+          <button className={styles.btnSuccess} onClick={onRateProject}>
+            <FaStar /> {userRating ? 'Update Rating' : 'Rate Project'}
           </button>
         </div>
       </div>
@@ -498,7 +647,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   );
 };
 
-// Project Request Modal Component
+// Project Request Modal Component (unchanged)
 interface ProjectRequestModalProps {
   onClose: () => void;
   onSubmit: (requestData: ProjectRequestData) => void;
@@ -637,6 +786,152 @@ const ProjectRequestModal: React.FC<ProjectRequestModalProps> = ({ onClose, onSu
               ) : (
                 <>
                   <FaSave /> Submit Request
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// New Project Rating Modal Component
+interface ProjectRatingModalProps {
+  project: Project;
+  onClose: () => void;
+  onSubmit: (projectId: number, rating: number, comment: string, wouldRecommend: boolean) => void;
+}
+
+const ProjectRatingModal: React.FC<ProjectRatingModalProps> = ({
+  project,
+  onClose,
+  onSubmit
+}) => {
+  const { user } = useSelector((state: RootState) => state.auth);
+  const userRating = useSelector((state: RootState) => 
+    selectUserProjectRating(state, project.id, user?.id || 0)
+  );
+
+  const [rating, setRating] = useState(userRating?.rating || 0);
+  const [comment, setComment] = useState(userRating?.comment || '');
+  const [wouldRecommend, setWouldRecommend] = useState<boolean>(userRating?.would_recommend || true);
+  const [submitting, setSubmitting] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating === 0) {
+      alert('Please select a rating');
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      await onSubmit(project.id, rating, comment, wouldRecommend);
+    } catch (error) {
+      console.error('Error submitting rating:', error);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h2>Rate Project: {project.name}</h2>
+          <button className={styles.closeButton} onClick={onClose}>
+            <FaTimes />
+          </button>
+        </div>
+
+        <form className={styles.ratingForm} onSubmit={handleSubmit}>
+          {/* Star Rating */}
+          <div className={styles.formGroup}>
+            <label>Your Rating *</label>
+            <div className={styles.starRating}>
+              {[1, 2, 3, 4, 5].map(star => (
+                <button
+                  key={star}
+                  type="button"
+                  className={`${styles.star} ${star <= (hoverRating || rating) ? styles.active : ''}`}
+                  onClick={() => setRating(star)}
+                  onMouseEnter={() => setHoverRating(star)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  disabled={submitting}
+                >
+                  <FaStar />
+                </button>
+              ))}
+            </div>
+            <div className={styles.ratingLabels}>
+              <span>Poor</span>
+              <span>Excellent</span>
+            </div>
+          </div>
+
+          {/* Comment */}
+          <div className={styles.formGroup}>
+            <label>Comments (Optional)</label>
+            <textarea
+              placeholder="Share your experience with this project..."
+              rows={4}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              disabled={submitting}
+            />
+          </div>
+
+          {/* Recommendation */}
+          <div className={styles.formGroup}>
+            <label>Would you recommend this team?</label>
+            <div className={styles.recommendOptions}>
+              <label className={styles.radioOption}>
+                <input
+                  type="radio"
+                  name="recommend"
+                  checked={wouldRecommend === true}
+                  onChange={() => setWouldRecommend(true)}
+                  disabled={submitting}
+                />
+                <span>Yes, definitely</span>
+              </label>
+              <label className={styles.radioOption}>
+                <input
+                  type="radio"
+                  name="recommend"
+                  checked={wouldRecommend === false}
+                  onChange={() => setWouldRecommend(false)}
+                  disabled={submitting}
+                />
+                <span>No, probably not</span>
+              </label>
+            </div>
+          </div>
+
+          <div className={styles.formActions}>
+            <button
+              type="button"
+              className={styles.btnSecondary}
+              onClick={onClose}
+              disabled={submitting}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className={styles.btnPrimary}
+              disabled={submitting || rating === 0}
+            >
+              {submitting ? (
+                <>
+                  <div className={styles.spinner}></div>
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <FaSave /> {userRating ? 'Update Rating' : 'Submit Rating'}
                 </>
               )}
             </button>

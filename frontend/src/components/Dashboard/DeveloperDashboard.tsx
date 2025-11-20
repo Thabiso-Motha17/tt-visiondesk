@@ -423,15 +423,6 @@ const DeveloperDashboard: React.FC = () => {
               Collaborate
             </button></Link>
           </div>
-
-          <div className={styles.featureCard}>
-            <FaChartLine className={styles.featureIcon} />
-            <h3>Performance Tracking</h3>
-            <p>Track your personal performance and completed tasks</p>
-            <button className={styles.featureBtn} onClick={handleViewPerformance}>
-              View Performance
-            </button>
-          </div>
         </div>
       </div>
 
@@ -495,28 +486,6 @@ const DeveloperDashboard: React.FC = () => {
                     >
                       Update Status
                     </button>
-                    <button 
-                      className={styles.btnSecondary}
-                      onClick={() => openCommentModal(task)}
-                    >
-                      Add Comment
-                    </button>
-                    <div className={styles.taskQuickActions}>
-                      <button 
-                        className={styles.btnIcon}
-                        onClick={() => openUploadModal(task)}
-                        title="Upload Deliverable"
-                      >
-                        <FaUpload />
-                      </button>
-                      <button 
-                        className={styles.btnIcon}
-                        onClick={() => openClarificationModal(task)}
-                        title="Request Clarification"
-                      >
-                        <FaComment />
-                      </button>
-                    </div>
                   </div>
                 </div>
               </div>
