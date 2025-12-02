@@ -11,20 +11,18 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// Database connection
 const pool = new Pool({
-  user: process.env.DB_USER ,
-  host: process.env.DB_HOST ,
+  user: process.env.DB_USER,
+  host: process.env.DB_HOST,
   database: process.env.DB_NAME,
   password: process.env.DB_PASSWORD,
   port: process.env.DB_PORT || 5432,
 });
 
-// JWT Authentication middleware
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -42,9 +40,357 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// ==================== AUTH ROUTES ====================
 
-// Register
+app.get('/api/projects', authenticateToken, async (req, res) => {
+  try {
+    let query = `
+      SELECT p.*, c.name as client_company_name, u.name as admin_name
+      FROM projects p 
+      LEFT JOIN companies c ON p.client_company_id = c.id 
+      LEFT JOIN users u ON p.admin_id = u.id
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (req.user.role === 'client') {
+      const companyResult = await pool.query('SELECT company_id FROM users WHERE id = $1', [req.user.id]);
+      query += ' AND p.client_company_id = $1';
+      params.push(companyResult.rows[0]?.company_id);
+    } else if (req.user.role === 'developer') {
+      query += ` AND p.id IN (
+        SELECT DISTINCT project_id FROM tasks WHERE assigned_to = $1
+      )`;
+      params.push(req.user.id);
+    }
+    
+    query += ' ORDER BY p.created_at DESC';
+    
+    const result = await pool.query(query, params);
+    res.json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/projects/:id', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(`
+      SELECT p.*, c.name as client_company_name, u.name as admin_name
+      FROM projects p 
+      LEFT JOIN companies c ON p.client_company_id = c.id 
+      LEFT JOIN users u ON p.admin_id = u.id
+      WHERE p.id = $1
+    `, [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    const project = result.rows[0];
+    if (req.user.role === 'client') {
+      const companyResult = await pool.query('SELECT company_id FROM users WHERE id = $1', [req.user.id]);
+      if (project.client_company_id !== companyResult.rows[0]?.company_id) {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
+    
+    res.json(project);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/projects', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { 
+      name, 
+      description, 
+      client_company_id, 
+      deadline, 
+      status = 'active',
+      project_document, 
+      document_name, 
+      document_type, 
+      document_size 
+    } = req.body;
+
+    console.log('Received project data:', {
+      name,
+      description,
+      client_company_id,
+      document_name,
+      document_type,
+      document_size,
+      project_document_length: project_document ? project_document.length : 0,
+      project_document_type: typeof project_document
+    });
+
+    if (!name || !description || !client_company_id) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+
+    let documentBuffer = null;
+    if (project_document) {
+      try {
+        if (typeof project_document === 'string' && project_document.length > 0) {
+          documentBuffer = Buffer.from(project_document, 'base64');
+          console.log('Document buffer created, length:', documentBuffer.length);
+        } else {
+          console.log('Invalid project_document format:', typeof project_document);
+        }
+      } catch (error) {
+        console.error('Error creating document buffer:', error);
+      }
+    }
+
+    const result = await pool.query(
+      `INSERT INTO projects (
+        name, description, client_company_id, admin_id, deadline, status,
+        project_document, document_name, document_type, document_size
+      ) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) 
+       RETURNING *`,
+      [
+        name, 
+        description, 
+        client_company_id, 
+        req.user.id, 
+        deadline, 
+        status,
+        documentBuffer, 
+        document_name,
+        document_type,
+        document_size
+      ]
+    );
+
+    console.log('Project created successfully, ID:', result.rows[0].id);
+    
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('Error creating project:', error);
+    res.status(400).json({ error: error.message });
+  }
+});
+
+app.put('/api/projects/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    const { 
+      name, 
+      description, 
+      client_company_id, 
+      deadline, 
+      status,
+      project_document, 
+      document_name, 
+      document_type, 
+      document_size,
+      remove_document = false 
+    } = req.body;
+    
+    let query;
+    let params;
+    
+    if (remove_document) {
+      
+      query = `
+        UPDATE projects 
+        SET name = $1, description = $2, client_company_id = $3, deadline = $4, status = $5, 
+            project_document = NULL, document_name = NULL, document_type = NULL, document_size = NULL,
+            updated_at = CURRENT_TIMESTAMP 
+        WHERE id = $6 
+        RETURNING *
+      `;
+      params = [name, description, client_company_id, deadline, status, id];
+    } else if (project_document) {
+      
+      query = `
+        UPDATE projects 
+        SET name = $1, description = $2, client_company_id = $3, deadline = $4, status = $5,
+            project_document = $6, document_name = $7, document_type = $8, document_size = $9,
+            updated_at = CURRENT_TIMESTAMP 
+        WHERE id = $10 
+        RETURNING *
+      `;
+      params = [
+        name, 
+        description, 
+        client_company_id, 
+        deadline, 
+        status,
+        Buffer.from(project_document, 'base64'),
+        document_name,
+        document_type,
+        document_size,
+        id
+      ];
+    } else {
+    
+      query = `
+        UPDATE projects 
+        SET name = $1, description = $2, client_company_id = $3, deadline = $4, status = $5, 
+            updated_at = CURRENT_TIMESTAMP 
+        WHERE id = $6 
+        RETURNING *
+      `;
+      params = [name, description, client_company_id, deadline, status, id];
+    }
+    
+    const result = await pool.query(query, params);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+  }
+});
+
+
+app.get('/api/projects/:id/document', authenticateToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `SELECT project_document, document_name, document_type, document_size 
+       FROM projects 
+       WHERE id = $1 AND project_document IS NOT NULL`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    
+    const project = result.rows[0];
+    
+    
+    const projectCheck = await pool.query(
+      `SELECT p.* FROM projects p 
+       WHERE p.id = $1 AND (
+         p.client_company_id = (SELECT company_id FROM users WHERE id = $2) OR
+         $3 IN ('admin', 'manager') OR
+         p.id IN (SELECT project_id FROM tasks WHERE assigned_to = $2)
+       )`,
+      [id, req.user.id, req.user.role]
+    );
+    
+    if (projectCheck.rows.length === 0) {
+      return res.status(403).json({ error: 'Access denied to this project' });
+    }
+    
+    
+    const documentData = {
+      document: project.project_document.toString('base64'),
+      name: project.document_name,
+      type: project.document_type,
+      size: project.document_size
+    };
+    
+    res.json(documentData);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.delete('/api/projects/:id/document', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    
+    const result = await pool.query(
+      `UPDATE projects 
+       SET project_document = NULL, document_name = NULL, document_type = NULL, document_size = NULL,
+           updated_at = CURRENT_TIMESTAMP 
+       WHERE id = $1 
+       RETURNING id`,
+      [id]
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json({ message: 'Document deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const { id } = req.params;
+    
+    const tasksResult = await pool.query('SELECT id FROM tasks WHERE project_id = $1', [id]);
+    if (tasksResult.rows.length > 0) {
+      return res.status(400).json({ error: 'Cannot delete project with associated tasks' });
+    }
+    
+    const result = await pool.query('DELETE FROM projects WHERE id = $1 RETURNING id', [id]);
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    res.json({ message: 'Project deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/projects/:id/download', authenticateToken, async (req, res) => {
+  try {
+    const projectId = parseInt(req.params.id);
+    
+    const result = await pool.query(
+      `SELECT document_name, document_type, project_document 
+       FROM projects WHERE id = $1`,
+      [projectId]
+    );
+    
+    if (result.rows.length === 0 || !result.rows[0].project_document) {
+      return res.status(404).json({ error: 'Document not found' });
+    }
+    
+    const project = result.rows[0];
+    
+    
+    res.setHeader('Content-Type', project.document_type || 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${project.document_name || 'document.pdf'}"`);
+    
+    
+    res.send(project.project_document);
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+
+
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password, name, role, company_id } = req.body;
@@ -61,7 +407,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
-// Login
+
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -103,7 +449,7 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// Validate token
+
 app.get('/api/auth/validate', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query(
@@ -121,14 +467,14 @@ app.get('/api/auth/validate', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== RATINGS & COMMENTS ROUTES ====================
 
-// Get project ratings with comments
+
+
 app.get('/api/projects/:projectId/ratings', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
     
-    // Check if user has access to this project
+    
     const projectCheck = await pool.query(
       `SELECT p.* FROM projects p 
        WHERE p.id = $1 AND (
@@ -157,18 +503,18 @@ app.get('/api/projects/:projectId/ratings', authenticateToken, async (req, res) 
   }
 });
 
-// Create or update project rating with comment
+
 app.post('/api/projects/:projectId/ratings', authenticateToken, async (req, res) => {
   try {
     const { projectId } = req.params;
     const { rating, comment, would_recommend } = req.body;
     
-    // Only clients can rate projects
+    
     if (req.user.role !== 'client') {
       return res.status(403).json({ error: 'Only clients can rate projects' });
     }
     
-    // Check if client has access to this project
+    
     const projectCheck = await pool.query(
       'SELECT * FROM projects WHERE id = $1 AND client_company_id = (SELECT company_id FROM users WHERE id = $2)',
       [projectId, req.user.id]
@@ -178,7 +524,7 @@ app.post('/api/projects/:projectId/ratings', authenticateToken, async (req, res)
       return res.status(403).json({ error: 'Access denied to this project' });
     }
     
-    // Check if user already rated this project
+    
     const existingRating = await pool.query(
       'SELECT * FROM project_ratings WHERE project_id = $1 AND user_id = $2',
       [projectId, req.user.id]
@@ -186,7 +532,7 @@ app.post('/api/projects/:projectId/ratings', authenticateToken, async (req, res)
     
     let result;
     if (existingRating.rows.length > 0) {
-      // Update existing rating
+      
       result = await pool.query(
         `UPDATE project_ratings 
          SET rating = $1, comment = $2, would_recommend = $3, updated_at = CURRENT_TIMESTAMP 
@@ -195,7 +541,7 @@ app.post('/api/projects/:projectId/ratings', authenticateToken, async (req, res)
         [rating, comment, would_recommend, projectId, req.user.id]
       );
     } else {
-      // Create new rating
+      
       result = await pool.query(
         `INSERT INTO project_ratings (project_id, user_id, rating, comment, would_recommend) 
          VALUES ($1, $2, $3, $4, $5) 
@@ -204,7 +550,7 @@ app.post('/api/projects/:projectId/ratings', authenticateToken, async (req, res)
       );
     }
     
-    // Fetch the rating with user details
+    
     const ratingWithUser = await pool.query(`
       SELECT pr.*, u.name as user_name, u.role as user_role
       FROM project_ratings pr
@@ -218,12 +564,12 @@ app.post('/api/projects/:projectId/ratings', authenticateToken, async (req, res)
   }
 });
 
-// Get task ratings with comments
+
 app.get('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
   try {
     const { taskId } = req.params;
     
-    // Check if user has access to this task
+    
     const taskCheck = await pool.query(
       `SELECT t.* FROM tasks t 
        WHERE t.id = $1 AND (
@@ -252,18 +598,18 @@ app.get('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
   }
 });
 
-// Create or update task rating with comment
+
 app.post('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
   try {
     const { taskId } = req.params;
     const { rating, comment, rating_type = 'quality' } = req.body;
     
-    // Only clients can rate tasks
+    
     if (req.user.role !== 'client') {
       return res.status(403).json({ error: 'Only clients can rate tasks' });
     }
     
-    // Check if client has access to this task
+    
     const taskCheck = await pool.query(
       `SELECT t.* FROM tasks t 
        JOIN projects p ON t.project_id = p.id 
@@ -275,7 +621,7 @@ app.post('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
       return res.status(403).json({ error: 'Access denied to this task' });
     }
     
-    // Check if user already rated this task with this rating type
+    
     const existingRating = await pool.query(
       'SELECT * FROM task_ratings WHERE task_id = $1 AND user_id = $2 AND rating_type = $3',
       [taskId, req.user.id, rating_type]
@@ -283,7 +629,7 @@ app.post('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
     
     let result;
     if (existingRating.rows.length > 0) {
-      // Update existing rating
+      
       result = await pool.query(
         `UPDATE task_ratings 
          SET rating = $1, comment = $2, updated_at = CURRENT_TIMESTAMP 
@@ -292,7 +638,7 @@ app.post('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
         [rating, comment, taskId, req.user.id, rating_type]
       );
     } else {
-      // Create new rating
+      
       result = await pool.query(
         `INSERT INTO task_ratings (task_id, user_id, rating, comment, rating_type) 
          VALUES ($1, $2, $3, $4, $5) 
@@ -301,7 +647,7 @@ app.post('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
       );
     }
     
-    // Fetch the rating with user details
+    
     const ratingWithUser = await pool.query(`
       SELECT tr.*, u.name as user_name, u.role as user_role
       FROM task_ratings tr
@@ -315,12 +661,12 @@ app.post('/api/tasks/:taskId/ratings', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete project rating
+
 app.delete('/api/projects/:projectId/ratings/:ratingId', authenticateToken, async (req, res) => {
   try {
     const { projectId, ratingId } = req.params;
     
-    // Check if rating exists and user is the author or admin
+    
     const ratingCheck = await pool.query(
       'SELECT * FROM project_ratings WHERE id = $1 AND project_id = $2',
       [ratingId, projectId]
@@ -341,12 +687,12 @@ app.delete('/api/projects/:projectId/ratings/:ratingId', authenticateToken, asyn
   }
 });
 
-// Delete task rating
+
 app.delete('/api/tasks/:taskId/ratings/:ratingId', authenticateToken, async (req, res) => {
   try {
     const { taskId, ratingId } = req.params;
     
-    // Check if rating exists and user is the author or admin
+    
     const ratingCheck = await pool.query(
       'SELECT * FROM task_ratings WHERE id = $1 AND task_id = $2',
       [ratingId, taskId]
@@ -367,64 +713,9 @@ app.delete('/api/tasks/:taskId/ratings/:ratingId', authenticateToken, async (req
   }
 });
 
-// Get ratings dashboard summary
-app.get('/api/ratings/dashboard/summary', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'admin' && req.user.role !== 'manager') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-    
-    const projectRatingsSummary = await pool.query(`
-      SELECT 
-        COUNT(*) as total_ratings,
-        AVG(rating) as average_rating,
-        COUNT(DISTINCT project_id) as projects_rated,
-        COUNT(DISTINCT user_id) as unique_raters
-      FROM project_ratings
-    `);
-    
-    const taskRatingsSummary = await pool.query(`
-      SELECT 
-        COUNT(*) as total_ratings,
-        AVG(rating) as average_rating,
-        COUNT(DISTINCT task_id) as tasks_rated,
-        COUNT(DISTINCT user_id) as unique_raters
-      FROM task_ratings
-    `);
-    
-    const recentProjectRatings = await pool.query(`
-      SELECT pr.*, p.name as project_name, u.name as user_name
-      FROM project_ratings pr
-      JOIN projects p ON pr.project_id = p.id
-      JOIN users u ON pr.user_id = u.id
-      ORDER BY pr.created_at DESC
-      LIMIT 10
-    `);
-    
-    const recentTaskRatings = await pool.query(`
-      SELECT tr.*, t.title as task_title, p.name as project_name, u.name as user_name
-      FROM task_ratings tr
-      JOIN tasks t ON tr.task_id = t.id
-      JOIN projects p ON t.project_id = p.id
-      JOIN users u ON tr.user_id = u.id
-      ORDER BY tr.created_at DESC
-      LIMIT 10
-    `);
-    
-    res.json({
-      project_ratings: projectRatingsSummary.rows[0],
-      task_ratings: taskRatingsSummary.rows[0],
-      recent_project_ratings: recentProjectRatings.rows,
-      recent_task_ratings: recentTaskRatings.rows
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
-// ==================== USER CRUD ROUTES ====================
 
-// Get all users (Admin only)
+
 app.get('/api/users', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && req.user.role !== 'manager') {
@@ -443,7 +734,7 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
-// Get user by ID
+
 app.get('/api/users/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -469,7 +760,7 @@ app.get('/api/users/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create user (Admin only)
+
 app.post('/api/users', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && req.user.role !== 'manager') {
@@ -492,7 +783,7 @@ app.post('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
-// Update user
+
 app.put('/api/users/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -520,7 +811,7 @@ app.put('/api/users/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete user (Admin only)
+
 app.delete('/api/users/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin' && req.user.role !== 'manager') {
@@ -545,9 +836,9 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== COMPANY CRUD ROUTES ====================
 
-// Get all companies
+
+
 app.get('/api/companies', authenticateToken, async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM companies ORDER BY name');
@@ -557,7 +848,7 @@ app.get('/api/companies', authenticateToken, async (req, res) => {
   }
 });
 
-// Get company by ID
+
 app.get('/api/companies/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -573,7 +864,7 @@ app.get('/api/companies/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create company (Admin only)
+
 app.post('/api/companies', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -595,7 +886,7 @@ app.post('/api/companies', authenticateToken, async (req, res) => {
   }
 });
 
-// Update company (Admin only)
+
 app.put('/api/companies/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -623,7 +914,7 @@ app.put('/api/companies/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete company (Admin only)
+
 app.delete('/api/companies/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'admin') {
@@ -649,150 +940,9 @@ app.delete('/api/companies/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== PROJECT CRUD ROUTES ====================
 
-// Get all projects
-app.get('/api/projects', authenticateToken, async (req, res) => {
-  try {
-    let query = `
-      SELECT p.*, c.name as client_company_name, u.name as admin_name
-      FROM projects p 
-      LEFT JOIN companies c ON p.client_company_id = c.id 
-      LEFT JOIN users u ON p.admin_id = u.id
-      WHERE 1=1
-    `;
-    const params = [];
-    
-    if (req.user.role === 'client') {
-      const companyResult = await pool.query('SELECT company_id FROM users WHERE id = $1', [req.user.id]);
-      query += ' AND p.client_company_id = $1';
-      params.push(companyResult.rows[0]?.company_id);
-    } else if (req.user.role === 'developer') {
-      query += ` AND p.id IN (
-        SELECT DISTINCT project_id FROM tasks WHERE assigned_to = $1
-      )`;
-      params.push(req.user.id);
-    }
-    
-    query += ' ORDER BY p.created_at DESC';
-    
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
-// Get project by ID
-app.get('/api/projects/:id', authenticateToken, async (req, res) => {
-  try {
-    const { id } = req.params;
-    
-    const result = await pool.query(`
-      SELECT p.*, c.name as client_company_name, u.name as admin_name
-      FROM projects p 
-      LEFT JOIN companies c ON p.client_company_id = c.id 
-      LEFT JOIN users u ON p.admin_id = u.id
-      WHERE p.id = $1
-    `, [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-    
-    const project = result.rows[0];
-    if (req.user.role === 'client') {
-      const companyResult = await pool.query('SELECT company_id FROM users WHERE id = $1', [req.user.id]);
-      if (project.client_company_id !== companyResult.rows[0]?.company_id) {
-        return res.status(403).json({ error: 'Access denied' });
-      }
-    }
-    
-    res.json(project);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
 
-// Create project (Admin/Manager only)
-app.post('/api/projects', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    const { name, description, client_company_id, deadline, status = 'active' } = req.body;
-    
-    const result = await pool.query(
-      `INSERT INTO projects (name, description, client_company_id, admin_id, deadline, status) 
-       VALUES ($1, $2, $3, $4, $5, $6) 
-       RETURNING *`,
-      [name, description, client_company_id, req.user.id, deadline, status]
-    );
-    
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Update project (Admin/Manager only)
-app.put('/api/projects/:id', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    const { id } = req.params;
-    const { name, description, client_company_id, deadline, status } = req.body;
-    
-    const result = await pool.query(
-      `UPDATE projects 
-       SET name = $1, description = $2, client_company_id = $3, deadline = $4, status = $5, updated_at = CURRENT_TIMESTAMP 
-       WHERE id = $6 
-       RETURNING *`,
-      [name, description, client_company_id, deadline, status, id]
-    );
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-    
-    res.json(result.rows[0]);
-  } catch (error) {
-    res.status(400).json({ error: error.message });
-  }
-});
-
-// Delete project (Admin/Manager only)
-app.delete('/api/projects/:id', authenticateToken, async (req, res) => {
-  try {
-    if (req.user.role !== 'manager' && req.user.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
-    const { id } = req.params;
-    
-    const tasksResult = await pool.query('SELECT id FROM tasks WHERE project_id = $1', [id]);
-    if (tasksResult.rows.length > 0) {
-      return res.status(400).json({ error: 'Cannot delete project with associated tasks' });
-    }
-    
-    const result = await pool.query('DELETE FROM projects WHERE id = $1 RETURNING id', [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Project not found' });
-    }
-    
-    res.json({ message: 'Project deleted successfully' });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
-
-// ==================== TASK CRUD ROUTES ====================
-
-// Get all tasks
 app.get('/api/tasks', authenticateToken, async (req, res) => {
   try {
     let query = `
@@ -822,7 +972,7 @@ app.get('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-// Get task by ID
+
 app.get('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -850,7 +1000,7 @@ app.get('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Create task (Admin/Manager only)
+
 app.post('/api/tasks', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'manager' && req.user.role !== 'admin') {
@@ -872,7 +1022,7 @@ app.post('/api/tasks', authenticateToken, async (req, res) => {
   }
 });
 
-// Update task
+
 app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -906,7 +1056,7 @@ app.put('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete task (Admin/Manager only)
+
 app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   try {
     if (req.user.role !== 'manager' && req.user.role !== 'admin') {
@@ -927,9 +1077,9 @@ app.delete('/api/tasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== SUB-TASK ROUTES ====================
 
-// Get sub-tasks for a task
+
+
 app.get('/api/tasks/:taskId/subtasks', authenticateToken, async (req, res) => {
   try {
     const { taskId } = req.params;
@@ -948,7 +1098,7 @@ app.get('/api/tasks/:taskId/subtasks', authenticateToken, async (req, res) => {
   }
 });
 
-// Create sub-task
+
 app.post('/api/tasks/:taskId/subtasks', authenticateToken, async (req, res) => {
   try {
     const { taskId } = req.params;
@@ -967,7 +1117,7 @@ app.post('/api/tasks/:taskId/subtasks', authenticateToken, async (req, res) => {
   }
 });
 
-// Update sub-task
+
 app.put('/api/subtasks/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -991,7 +1141,7 @@ app.put('/api/subtasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// Delete sub-task
+
 app.delete('/api/subtasks/:id', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
@@ -1008,14 +1158,14 @@ app.delete('/api/subtasks/:id', authenticateToken, async (req, res) => {
   }
 });
 
-// ==================== HEALTH CHECK & DEBUG ROUTES ====================
 
-// Health check
+
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Server is running' });
 });
 
-// Database connection test
+
 app.get('/api/debug/db', async (req, res) => {
   try {
     const result = await pool.query('SELECT NOW() as current_time, version() as postgres_version');
@@ -1039,7 +1189,7 @@ app.get('/api/debug/db', async (req, res) => {
   }
 });
 
-// Test ratings endpoint
+
 app.get('/api/ratings/test', (req, res) => {
   res.json({ message: 'Ratings endpoint is working!' });
 });
@@ -1049,5 +1199,4 @@ app.listen(PORT, () => {
   console.log(`📊 Database: ${process.env.DB_NAME}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/api/health`);
   console.log(`⭐ Ratings test: http://localhost:${PORT}/api/ratings/test`);
-  console.log(`📈 Ratings dashboard: http://localhost:${PORT}/api/ratings/dashboard/summary`);
 });

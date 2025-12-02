@@ -16,7 +16,11 @@ import {
   FaSave,
   FaEye,
   FaStar,
-  FaRegStar
+  FaRegStar,
+  FaPaperclip,
+  FaFilePdf,
+  FaTrash,
+  FaUpload
 } from 'react-icons/fa';
 import styles from './ClientProjectPage.module.css';
 
@@ -42,6 +46,11 @@ interface Project {
   admin_name?: string;
   created_at: string;
   updated_at: string;
+  project_document?: string;  // base64 string
+  document_name?: string;
+  document_type?: string;
+  document_size?: number;
+  uploaded_at?: string;
 }
 
 interface Task {
@@ -70,6 +79,15 @@ interface ProjectRequestData {
   additional_notes?: string;
 }
 
+// Helper function to format file size
+const formatFileSize = (bytes: number | undefined): string => {
+  if (!bytes) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
 const ClientProjectPage: React.FC = () => {
   const { projects, loading } = useSelector((state: RootState) => state.projects);
   const { tasks } = useSelector((state: RootState) => state.tasks);
@@ -80,6 +98,8 @@ const ClientProjectPage: React.FC = () => {
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [projectDetails, setProjectDetails] = useState<Project | null>(null);
   const [showRatingModal, setShowRatingModal] = useState<Project | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<Project | null>(null);
+  const [showUploadModal, setShowUploadModal] = useState<{ project: Project; file: File | null } | null>(null);
 
   useEffect(() => {
     dispatch(fetchProjects() as any);
@@ -151,6 +171,98 @@ const ClientProjectPage: React.FC = () => {
     } catch (error) {
       console.error('Error submitting rating:', error);
       alert('There was an error submitting your rating. Please try again.');
+    }
+  };
+
+  // Document Functions
+  const handleViewDocument = (project: Project) => {
+    if (!project.project_document) {
+      alert('No document available for this project');
+      return;
+    }
+    setViewingDocument(project);
+  };
+
+  const handleDownloadDocument = async (project: Project) => {
+  try {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`http://localhost:5000/api/projects/${project.id}/download`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Download failed: ${response.statusText}`);
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = project.document_name || `project-${project.id}-document.pdf`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    console.log('Document downloaded successfully');
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    alert('Failed to download document');
+  }
+};
+
+  // Handle document upload (for client feedback or additional documents)
+  const handleUploadDocument = (project: Project) => {
+    setShowUploadModal({ project, file: null });
+  };
+
+  const handleFileUploadSubmit = async () => {
+    if (!showUploadModal?.file) {
+      alert('Please select a file to upload');
+      return;
+    }
+
+    const file = showUploadModal.file;
+    
+    // Validate file
+    if (!file.type.includes('pdf') && !file.type.includes('image')) {
+      alert('Only PDF and image files are allowed');
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      alert('File size must be less than 10MB');
+      return;
+    }
+
+    try {
+      // Convert file to base64
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64Data = e.target?.result as string;
+        
+        // Here you would typically send to your API
+        console.log('Uploading document for project:', showUploadModal.project.id, {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          base64Data: base64Data.substring(0, 100) + '...' // Log first 100 chars
+        });
+
+        // Simulate API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        alert('Document uploaded successfully!');
+        setShowUploadModal(null);
+      };
+      
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('Error uploading document:', error);
+      alert('Error uploading document');
     }
   };
 
@@ -236,6 +348,9 @@ const ClientProjectPage: React.FC = () => {
               onViewDetails={handleViewProjectDetails}
               onRequestUpdate={handleRequestUpdate}
               onRateProject={handleOpenRatingModal}
+              onViewDocument={handleViewDocument}
+              onDownloadDocument={handleDownloadDocument}
+              onUploadDocument={handleUploadDocument}
             />
           ))}
         </div>
@@ -264,6 +379,9 @@ const ClientProjectPage: React.FC = () => {
           onDownloadReport={() => handleDownloadReport(projectDetails.id)}
           onRequestUpdate={() => handleRequestUpdate(projectDetails.id)}
           onRateProject={() => handleOpenRatingModal(projectDetails)}
+          onViewDocument={() => handleViewDocument(projectDetails)}
+          onDownloadDocument={() => handleDownloadDocument(projectDetails)}
+          onUploadDocument={() => handleUploadDocument(projectDetails)}
         />
       )}
 
@@ -283,6 +401,24 @@ const ClientProjectPage: React.FC = () => {
           onSubmit={handleSubmitRating}
         />
       )}
+
+      {/* Document View Modal */}
+      {viewingDocument && (
+        <DocumentViewModal
+          project={viewingDocument}
+          onClose={() => setViewingDocument(null)}
+          onDownload={() => handleDownloadDocument(viewingDocument)}
+        />
+      )}
+
+      {/* Upload Document Modal */}
+      {showUploadModal && (
+        <UploadDocumentModal
+          project={showUploadModal.project}
+          onClose={() => setShowUploadModal(null)}
+          onSubmit={handleFileUploadSubmit}
+        />
+      )}
     </div>
   );
 };
@@ -294,6 +430,9 @@ interface ProjectCardProps {
   onViewDetails: (project: Project) => void;
   onRequestUpdate: (projectId: number) => void;
   onRateProject: (project: Project) => void;
+  onViewDocument: (project: Project) => void;
+  onDownloadDocument: (project: Project) => void;
+  onUploadDocument: (project: Project) => void;
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({
@@ -301,7 +440,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   tasks,
   onViewDetails,
   onRequestUpdate,
-  onRateProject
+  onRateProject,
+  onViewDocument,
+  onDownloadDocument,
+  onUploadDocument
 }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -350,7 +492,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       <div className={styles.projectHeader}>
         <h3>{project.name}</h3>
         <div className={styles.headerRight}>
-          <span className={`${styles.statusBadge} ${styles[project.status]}`}>
+          <span className={`${styles.statusBadge} ${styles[project.status] || styles.inactive}`}>
             {project.status}
           </span>
           {/* Average Rating Display */}
@@ -365,6 +507,39 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
       </div>
 
       <p className={styles.projectDescription}>{project.description}</p>
+
+      {/* Document Preview */}
+      {project.project_document && (
+        <div className={styles.documentPreview}>
+          <div className={styles.documentInfo}>
+            <FaPaperclip className={styles.documentIcon} />
+            <div className={styles.documentDetails}>
+              <span className={styles.documentName}>
+                {project.document_name || `Project Document`}
+              </span>
+              <span className={styles.documentSize}>
+                {project.document_size ? `(${formatFileSize(project.document_size)})` : ''}
+              </span>
+            </div>
+          </div>
+          <div className={styles.documentActions}>
+            <button 
+              className={styles.btnIcon}
+              onClick={() => onViewDocument(project)}
+              title="View Document"
+            >
+              <FaEye />
+            </button>
+            <button 
+              className={styles.btnIcon}
+              onClick={() => onDownloadDocument(project)}
+              title="Download Document"
+            >
+              <FaDownload />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Progress Section */}
       <div className={styles.progressSection}>
@@ -446,6 +621,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
         >
           <FaStar /> {userRating ? 'Update Rating' : 'Rate Project'}
         </button>
+        {project.project_document && (
+          <button 
+            className={styles.btnInfo}
+            onClick={() => onUploadDocument(project)}
+          >
+            <FaUpload /> Upload Feedback
+          </button>
+        )}
       </div>
 
       {/* User's Current Rating Display */}
@@ -473,6 +656,9 @@ interface ProjectDetailsModalProps {
   onDownloadReport: () => void;
   onRequestUpdate: () => void;
   onRateProject: () => void;
+  onViewDocument: () => void;
+  onDownloadDocument: () => void;
+  onUploadDocument: () => void;
 }
 
 const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
@@ -481,7 +667,10 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   onClose,
   onDownloadReport,
   onRequestUpdate,
-  onRateProject
+  onRateProject,
+  onViewDocument,
+  onDownloadDocument,
+  onUploadDocument
 }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
@@ -523,6 +712,51 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
         </div>
 
         <div className={styles.modalContent}>
+          {/* Document Section */}
+          {project.project_document && (
+            <div className={styles.documentSection}>
+              <h3>Project Document</h3>
+              <div className={styles.documentCard}>
+                <div className={styles.documentHeader}>
+                  <FaFilePdf className={styles.documentIconLarge} />
+                  <div className={styles.documentInfo}>
+                    <span className={styles.documentName}>
+                      {project.document_name || `Project ${project.id} Document`}
+                    </span>
+                    <span className={styles.documentMeta}>
+                      {project.document_type || 'PDF'} • {formatFileSize(project.document_size)}
+                    </span>
+                    <span className={styles.documentDate}>
+                      {project.uploaded_at 
+                        ? `Uploaded: ${new Date(project.uploaded_at).toLocaleDateString()}` 
+                        : 'No upload date available'}
+                    </span>
+                  </div>
+                </div>
+                <div className={styles.documentActions}>
+                  <button 
+                    className={styles.btnSecondary}
+                    onClick={onViewDocument}
+                  >
+                    <FaEye /> View Document
+                  </button>
+                  <button 
+                    className={styles.btnPrimary}
+                    onClick={onDownloadDocument}
+                  >
+                    <FaDownload /> Download
+                  </button>
+                  <button 
+                    className={styles.btnInfo}
+                    onClick={onUploadDocument}
+                  >
+                    <FaUpload /> Upload Feedback
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Rating Summary */}
           <div className={styles.ratingSummary}>
             <div className={styles.ratingOverview}>
@@ -556,7 +790,7 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
             <div className={styles.infoGrid}>
               <div className={styles.infoItem}>
                 <strong>Status:</strong>
-                <span className={`${styles.statusBadge} ${styles[project.status]}`}>
+                <span className={`${styles.statusBadge} ${styles[project.status] || styles.inactive}`}>
                   {project.status}
                 </span>
               </div>
@@ -647,7 +881,254 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   );
 };
 
-// Project Request Modal Component (unchanged)
+// Document View Modal Component
+interface DocumentViewModalProps {
+  project: Project;
+  onClose: () => void;
+  onDownload: () => void;
+}
+
+const DocumentViewModal: React.FC<DocumentViewModalProps> = ({
+  project,
+  onClose,
+  onDownload
+}) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const getDocumentUrl = () => {
+    if (!project.project_document) {
+      setError('No document data available');
+      return '';
+    }
+    
+    try {
+      // Clean base64 data - remove data URL prefix if present
+      const base64Data = project.project_document.includes('base64,') 
+        ? project.project_document.split('base64,')[1] 
+        : project.project_document;
+
+      // Create a blob URL from the base64 data
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: project.document_type || 'application/pdf' });
+      
+      return URL.createObjectURL(blob);
+    } catch (err) {
+      setError('Error loading document: ' + (err as Error).message);
+      return '';
+    }
+  };
+
+  const handleIframeLoad = () => {
+    setLoading(false);
+  };
+
+  const documentUrl = getDocumentUrl();
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={`${styles.modal} ${styles.fullscreen}`}>
+        <div className={styles.modalHeader}>
+          <div className={styles.documentTitle}>
+            <FaFilePdf />
+            <h2>{project.document_name || `Project ${project.id} Document`}</h2>
+          </div>
+          <div className={styles.documentActions}>
+            <button className={styles.btnPrimary} onClick={onDownload}>
+              <FaDownload /> Download
+            </button>
+            <button className={styles.closeButton} onClick={onClose}>
+              <FaTimes />
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.documentViewer}>
+          {loading && !error && (
+            <div className={styles.documentLoading}>
+              <div className={styles.spinner}></div>
+              <p>Loading document...</p>
+            </div>
+          )}
+          
+          {error ? (
+            <div className={styles.documentError}>
+              <FaFileAlt className={styles.errorIcon} />
+              <h3>Error Loading Document</h3>
+              <p>{error}</p>
+              <button className={styles.btnPrimary} onClick={onDownload}>
+                <FaDownload /> Download Instead
+              </button>
+            </div>
+          ) : project.document_type?.includes('pdf') ? (
+            <>
+              {loading && (
+                <div className={styles.documentLoading}>
+                  <div className={styles.spinner}></div>
+                  <p>Loading document...</p>
+                </div>
+              )}
+              <iframe
+                src={documentUrl}
+                className={styles.documentFrame}
+                onLoad={handleIframeLoad}
+                title={project.document_name || 'Project Document'}
+              />
+            </>
+          ) : (
+            <div className={styles.documentUnsupported}>
+              <FaFileAlt className={styles.unsupportedIcon} />
+              <h3>Document Preview Not Available</h3>
+              <p>Preview is only available for PDF files. Please download the document to view it.</p>
+              <button className={styles.btnPrimary} onClick={onDownload}>
+                <FaDownload /> Download to View
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Upload Document Modal Component
+interface UploadDocumentModalProps {
+  project: Project;
+  onClose: () => void;
+  onSubmit: () => void;
+}
+
+const UploadDocumentModal: React.FC<UploadDocumentModalProps> = ({
+  project,
+  onClose,
+  onSubmit
+}) => {
+  const [file, setFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      // Validate file
+      if (!selectedFile.type.includes('pdf') && !selectedFile.type.includes('image')) {
+        alert('Only PDF and image files are allowed');
+        return;
+      }
+
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        alert('File size must be less than 10MB');
+        return;
+      }
+
+      setFile(selectedFile);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!file) {
+      alert('Please select a file to upload');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      await onSubmit();
+    } catch (error) {
+      console.error('Error uploading file:', error);
+      alert('Error uploading file');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div className={styles.modalOverlay}>
+      <div className={styles.modal}>
+        <div className={styles.modalHeader}>
+          <h2>Upload Feedback Document</h2>
+          <button className={styles.closeButton} onClick={onClose}>
+            <FaTimes />
+          </button>
+        </div>
+
+        <div className={styles.modalContent}>
+          <p>Upload feedback or additional documents for: <strong>{project.name}</strong></p>
+          
+          <form className={styles.uploadForm} onSubmit={handleSubmit}>
+            <div className={styles.formGroup}>
+              <label>Select File (PDF or Image, max 10MB)</label>
+              <div className={styles.fileUploadArea}>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.gif"
+                  onChange={handleFileChange}
+                  className={styles.fileInput}
+                  id="feedback-file-upload"
+                />
+                <label htmlFor="feedback-file-upload" className={styles.fileUploadLabel}>
+                  <FaUpload className={styles.uploadIcon} />
+                  <span>Choose file or drag and drop</span>
+                  <p className={styles.fileHint}>PDF, JPG, PNG, GIF up to 10MB</p>
+                </label>
+              </div>
+              
+              {file && (
+                <div className={styles.filePreview}>
+                  <FaPaperclip className={styles.fileIcon} />
+                  <div className={styles.fileDetails}>
+                    <span className={styles.fileName}>{file.name}</span>
+                    <span className={styles.fileSize}>{formatFileSize(file.size)}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.removeFileBtn}
+                    onClick={() => setFile(null)}
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className={styles.formActions}>
+              <button 
+                type="button" 
+                className={styles.btnSecondary} 
+                onClick={onClose}
+              >
+                Cancel
+              </button>
+              <button 
+                type="submit" 
+                className={styles.btnPrimary}
+                disabled={!file || uploading}
+              >
+                {uploading ? (
+                  <>
+                    <div className={styles.spinner}></div>
+                    Uploading...
+                  </>
+                ) : (
+                  <>
+                    <FaUpload /> Upload Document
+                  </>
+                )}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Project Request Modal Component
 interface ProjectRequestModalProps {
   onClose: () => void;
   onSubmit: (requestData: ProjectRequestData) => void;
@@ -692,10 +1173,10 @@ const ProjectRequestModal: React.FC<ProjectRequestModalProps> = ({ onClose, onSu
             <label>Project Title *</label>
             <input 
               type="text" 
-              placeholder="Enter project title"
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
               required
+              placeholder="Enter project title"
               disabled={submitting}
             />
           </div>
@@ -703,21 +1184,22 @@ const ProjectRequestModal: React.FC<ProjectRequestModalProps> = ({ onClose, onSu
           <div className={styles.formGroup}>
             <label>Description *</label>
             <textarea 
-              placeholder="Describe your project requirements, goals, and objectives..."
-              rows={4}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
+              placeholder="Describe your project requirements..."
+              rows={4}
               disabled={submitting}
             />
           </div>
 
           <div className={styles.formRow}>
             <div className={styles.formGroup}>
-              <label>Priority</label>
+              <label>Priority *</label>
               <select
                 value={formData.priority}
                 onChange={(e) => setFormData({ ...formData, priority: e.target.value as any })}
+                required
                 disabled={submitting}
               >
                 <option value="low">Low</option>
@@ -726,8 +1208,9 @@ const ProjectRequestModal: React.FC<ProjectRequestModalProps> = ({ onClose, onSu
                 <option value="urgent">Urgent</option>
               </select>
             </div>
+
             <div className={styles.formGroup}>
-              <label>Desired Deadline</label>
+              <label>Deadline</label>
               <input 
                 type="date" 
                 value={formData.deadline}
@@ -739,27 +1222,22 @@ const ProjectRequestModal: React.FC<ProjectRequestModalProps> = ({ onClose, onSu
 
           <div className={styles.formGroup}>
             <label>Budget Range (Optional)</label>
-            <select
+            <input 
+              type="text" 
               value={formData.budget_range}
               onChange={(e) => setFormData({ ...formData, budget_range: e.target.value })}
+              placeholder="e.g., $5,000 - $10,000"
               disabled={submitting}
-            >
-              <option value="">Select budget range</option>
-              <option value="under-5k">Under $5,000</option>
-              <option value="5k-15k">$5,000 - $15,000</option>
-              <option value="15k-50k">$15,000 - $50,000</option>
-              <option value="over-50k">Over $50,000</option>
-              <option value="custom">Custom Quote Needed</option>
-            </select>
+            />
           </div>
 
           <div className={styles.formGroup}>
             <label>Additional Notes (Optional)</label>
             <textarea 
-              placeholder="Any additional information, special requirements, or notes..."
-              rows={3}
               value={formData.additional_notes}
               onChange={(e) => setFormData({ ...formData, additional_notes: e.target.value })}
+              placeholder="Any additional information..."
+              rows={3}
               disabled={submitting}
             />
           </div>
@@ -796,7 +1274,7 @@ const ProjectRequestModal: React.FC<ProjectRequestModalProps> = ({ onClose, onSu
   );
 };
 
-// New Project Rating Modal Component
+// Project Rating Modal Component
 interface ProjectRatingModalProps {
   project: Project;
   onClose: () => void;
@@ -808,16 +1286,10 @@ const ProjectRatingModal: React.FC<ProjectRatingModalProps> = ({
   onClose,
   onSubmit
 }) => {
-  const { user } = useSelector((state: RootState) => state.auth);
-  const userRating = useSelector((state: RootState) => 
-    selectUserProjectRating(state, project.id, user?.id || 0)
-  );
-
-  const [rating, setRating] = useState(userRating?.rating || 0);
-  const [comment, setComment] = useState(userRating?.comment || '');
-  const [wouldRecommend, setWouldRecommend] = useState<boolean>(userRating?.would_recommend || true);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [wouldRecommend, setWouldRecommend] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [hoverRating, setHoverRating] = useState(0);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -847,81 +1319,59 @@ const ProjectRatingModal: React.FC<ProjectRatingModalProps> = ({
         </div>
 
         <form className={styles.ratingForm} onSubmit={handleSubmit}>
-          {/* Star Rating */}
           <div className={styles.formGroup}>
-            <label>Your Rating *</label>
-            <div className={styles.starRating}>
+            <label>Project Rating *</label>
+            <div className={styles.ratingInput}>
               {[1, 2, 3, 4, 5].map(star => (
                 <button
                   key={star}
                   type="button"
-                  className={`${styles.star} ${star <= (hoverRating || rating) ? styles.active : ''}`}
+                  className={`${styles.starButton} ${star <= rating ? styles.active : ''}`}
                   onClick={() => setRating(star)}
-                  onMouseEnter={() => setHoverRating(star)}
-                  onMouseLeave={() => setHoverRating(0)}
                   disabled={submitting}
                 >
-                  <FaStar />
+                  {star <= rating ? <FaStar /> : <FaRegStar />}
                 </button>
               ))}
             </div>
-            <div className={styles.ratingLabels}>
-              <span>Poor</span>
-              <span>Excellent</span>
-            </div>
           </div>
 
-          {/* Comment */}
           <div className={styles.formGroup}>
-            <label>Comments (Optional)</label>
+            <label htmlFor="comment">Comment (Optional)</label>
             <textarea
-              placeholder="Share your experience with this project..."
-              rows={4}
+              id="comment"
               value={comment}
               onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your feedback about this project..."
+              rows={4}
               disabled={submitting}
             />
           </div>
 
-          {/* Recommendation */}
           <div className={styles.formGroup}>
-            <label>Would you recommend this team?</label>
-            <div className={styles.recommendOptions}>
-              <label className={styles.radioOption}>
-                <input
-                  type="radio"
-                  name="recommend"
-                  checked={wouldRecommend === true}
-                  onChange={() => setWouldRecommend(true)}
-                  disabled={submitting}
-                />
-                <span>Yes, definitely</span>
-              </label>
-              <label className={styles.radioOption}>
-                <input
-                  type="radio"
-                  name="recommend"
-                  checked={wouldRecommend === false}
-                  onChange={() => setWouldRecommend(false)}
-                  disabled={submitting}
-                />
-                <span>No, probably not</span>
-              </label>
-            </div>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={wouldRecommend}
+                onChange={(e) => setWouldRecommend(e.target.checked)}
+                disabled={submitting}
+              />
+              <span>I would recommend this project/team</span>
+            </label>
           </div>
 
           <div className={styles.formActions}>
-            <button
-              type="button"
-              className={styles.btnSecondary}
+            <button 
+              type="button" 
+              className={styles.btnSecondary} 
               onClick={onClose}
               disabled={submitting}
             >
               Cancel
             </button>
-            <button
-              type="submit"
-              className={styles.btnPrimary}
+            <button 
+              type="submit" 
+              className={styles.btnPrimary} 
               disabled={submitting || rating === 0}
             >
               {submitting ? (
@@ -931,7 +1381,7 @@ const ProjectRatingModal: React.FC<ProjectRatingModalProps> = ({
                 </>
               ) : (
                 <>
-                  <FaSave /> {userRating ? 'Update Rating' : 'Submit Rating'}
+                  <FaSave /> Submit Rating
                 </>
               )}
             </button>
@@ -941,5 +1391,5 @@ const ProjectRatingModal: React.FC<ProjectRatingModalProps> = ({
     </div>
   );
 };
-
+  
 export default ClientProjectPage;
