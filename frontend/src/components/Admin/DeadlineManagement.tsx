@@ -466,7 +466,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Error Message */}
+      {}
       {error && (
         <div className={styles.errorMessage}>
           <FaExclamationTriangle className={styles.errorIcon} />
@@ -480,7 +480,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       )}
 
-      {/* Deadline Statistics */}
+      {}
       <div className={styles.deadlineStats}>
         <div className={styles.statCard}>
           <div className={styles.statValue}>{deadlines.length}</div>
@@ -506,7 +506,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Filters */}
+      {}
       <div className={styles.filtersSection}>
         <div className={styles.filterTabs}>
           <button 
@@ -536,7 +536,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Deadlines List */}
+      {}
       <div className={styles.deadlinesList}>
         {filteredDeadlines.length === 0 ? (
           <div className={styles.noDeadlines}>
@@ -655,7 +655,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         )}
       </div>
 
-      {/* Create Deadline Modal */}
+      {}
       {showCreateModal && (
         <CreateDeadlineModal
           projects={projects}
@@ -667,7 +667,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         />
       )}
 
-      {/* Edit Deadline Modal */}
+      {}
       {showEditModal && editingDeadline && (
         <EditDeadlineModal
           deadline={editingDeadline}

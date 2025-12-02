@@ -220,7 +220,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
         </button>
       </div>
 
-      {/* Error Message */}
+      {}
       {error && (
         <div className={styles['error-message']}>
           <FaBan /> {error}
@@ -230,7 +230,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
         </div>
       )}
 
-      {/* Company Statistics */}
+      {}
       <div className={styles['company-stats-grid']}>
         <div className={styles['stat-card']}>
           <div className={`${styles['stat-icon']} ${styles['total']}`}>
@@ -270,7 +270,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Filters and Search */}
+      {}
       <div className={styles['filters-section']}>
         <div className={styles['search-box']}>
           <FaSearch className={styles['search-icon']} />
@@ -296,7 +296,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Companies Table */}
+      {}
       <div className={styles['companies-table-container']}>
         <div className={styles['table-header']}>
           <h2>All Companies ({filteredCompanies.length})</h2>
@@ -397,7 +397,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
         </div>
       </div>
 
-      {/* Create Company Modal */}
+      {}
       {showCreateModal && (
         <CreateCompanyModal
           onClose={() => setShowCreateModal(false)}
@@ -405,7 +405,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
         />
       )}
 
-      {/* Edit Company Modal */}
+      {}
       {showEditModal && selectedCompany && (
         <EditCompanyModal
           company={selectedCompany}

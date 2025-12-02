@@ -12,7 +12,12 @@ import {
   FaExclamationTriangle,
   FaEye,
   FaDownload,
-  FaSave
+  FaSave,
+  FaPaperclip,
+  FaTimes,
+  FaSearch,
+  FaFilter,
+  FaSort
 } from 'react-icons/fa';
 import styles from './AdminProjectPage.module.css';
 import {
@@ -64,6 +69,7 @@ interface CreateProjectData {
   client_company_id: number;
   deadline: string;
   status?: string;
+  project_file?: File | null;
 }
 
 const AdminProjectPage: React.FC = () => {
@@ -75,6 +81,9 @@ const AdminProjectPage: React.FC = () => {
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('newest');
 
   // Fetch projects, tasks, and companies from Redux
   useEffect(() => {
@@ -85,20 +94,33 @@ const AdminProjectPage: React.FC = () => {
 
   // Create project using Redux
   const handleCreateProject = async (projectData: CreateProjectData) => {
-    try {
-      const result = await dispatch(createProject({
-        ...projectData,
-        admin_id: user?.id,
-        status: 'active'
-      })).unwrap();
+  try {
+    // Prepare document data if file exists
+    let documentData = {};
+    if (projectData.project_file) {
+      const base64String = await convertFileToBase64(projectData.project_file);
       
-      setShowCreateModal(false);
-      alert('Project created successfully!');
-    } catch (err) {
-      console.error('Error creating project:', err);
-      alert(`Error: ${err instanceof Error ? err.message : 'Failed to create project'}`);
+      documentData = {
+        project_document: base64String,
+        document_name: projectData.project_file.name,
+        document_type: projectData.project_file.type,
+        document_size: projectData.project_file.size
+      };
     }
-  };
+
+    const result = await dispatch(createProject({
+      ...projectData,
+      ...documentData,
+      admin_id: user?.id || 0
+    })).unwrap();
+    
+    setShowCreateModal(false);
+    alert('Project created successfully!');
+  } catch (err) {
+    console.error('Error creating project:', err);
+    alert(`Error: ${err instanceof Error ? err.message : 'Failed to create project'}`);
+  }
+};
 
   // Update project using Redux
   const handleUpdateProject = async (projectData: CreateProjectData) => {
@@ -139,6 +161,50 @@ const AdminProjectPage: React.FC = () => {
     }
   };
 
+  const convertFileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      // Remove the data URL prefix (e.g., "data:application/pdf;base64,")
+      const base64String = (reader.result as string).split(',')[1];
+      resolve(base64String);
+    };
+    reader.onerror = error => reject(error);
+  });
+};
+
+  // File upload handler function
+  const handleFileUpload = (file: File, setFormData: React.Dispatch<React.SetStateAction<any>>) => {
+    // Check if file is PDF
+    if (file.type !== 'application/pdf') {
+      alert('Only PDF files are allowed!');
+      return false;
+    }
+
+    // Check file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File size must be less than 10MB');
+      return false;
+    }
+
+    setFormData((prev: any) => ({
+      ...prev,
+      project_file: file
+    }));
+    
+    return true;
+  };
+
+  // Remove file handler function
+  const handleRemoveFile = (setFormData: React.Dispatch<React.SetStateAction<any>>) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      project_file: null
+    }));
+  };
+
+  // Get project statistics
   const getProjectStats = (projectId: number) => {
     const projectTasks = tasks.filter(task => task.project_id === projectId);
     const completedTasks = projectTasks.filter(task => 
@@ -158,6 +224,7 @@ const AdminProjectPage: React.FC = () => {
     };
   };
 
+  // Get overdue projects
   const getOverdueProjects = () => {
     return projects.filter(project => {
       const stats = getProjectStats(project.id);
@@ -173,6 +240,45 @@ const AdminProjectPage: React.FC = () => {
     return company ? company.name : 'Unknown Company';
   };
 
+  // Filter and sort projects
+  const getFilteredProjects = () => {
+    let filtered = projects;
+
+    // Apply search filter
+    if (searchTerm) {
+      filtered = filtered.filter(project =>
+        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        project.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (project.client_company_name && project.client_company_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(project => project.status === statusFilter);
+    }
+
+    // Apply sorting
+    filtered = [...filtered].sort((a, b) => {
+      switch (sortBy) {
+        case 'name':
+          return a.name.localeCompare(b.name);
+        case 'deadline':
+          return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+        case 'progress':
+          return getProjectStats(b.id).progress - getProjectStats(a.id).progress;
+        case 'newest':
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        case 'oldest':
+          return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        default:
+          return 0;
+      }
+    });
+
+    return filtered;
+  };
+
   // Clear errors when component unmounts
   useEffect(() => {
     return () => {
@@ -185,10 +291,14 @@ const AdminProjectPage: React.FC = () => {
   // Combined loading state
   const loading = projectsLoading || tasksLoading || companiesLoading;
 
+  // Get unique statuses for filter
+  const statuses = ['all', ...new Set(projects.map(p => p.status))];
+
   if (loading) return <div className={styles.loading}>Loading Projects...</div>;
 
   return (
     <div className={styles.adminProjectPage}>
+      {/* Header Section */}
       <div className={styles.pageHeader}>
         <div className={styles.headerContent}>
           <h1>Project Management</h1>
@@ -243,19 +353,68 @@ const AdminProjectPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Projects Table */}
+      {/* Projects Table Section */}
       <div className={styles.projectsTableContainer}>
         <div className={styles.tableHeader}>
-          <h2>All Projects ({projects.length})</h2>
-          <div className={styles.tableActions}>
-            <button className={styles.btnSecondary}>
-              <FaDownload /> Export
-            </button>
+          <h2>All Projects ({getFilteredProjects().length})</h2>
+          <div className={styles.tableControls}>
+            {/* Search Bar */}
+            <div className={styles.searchBar}>
+              <FaSearch className={styles.searchIcon} />
+              <input
+                type="text"
+                placeholder="Search projects..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className={styles.searchInput}
+              />
+            </div>
+
+            {/* Filters */}
+            <div className={styles.filterGroup}>
+              <div className={styles.filter}>
+                <FaFilter className={styles.filterIcon} />
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  {statuses.map(status => (
+                    <option key={status} value={status}>
+                      {status === 'all' ? 'All Statuses' : status.charAt(0).toUpperCase() + status.slice(1)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.filter}>
+                <FaSort className={styles.filterIcon} />
+                <select
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                  className={styles.filterSelect}
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="oldest">Oldest First</option>
+                  <option value="name">Name (A-Z)</option>
+                  <option value="deadline">Deadline</option>
+                  <option value="progress">Progress</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Export Button */}
+            <div className={styles.tableActions}>
+              <button className={styles.btnSecondary}>
+                <FaDownload /> Export
+              </button>
+            </div>
           </div>
         </div>
 
+        {/* Projects Grid */}
         <div className={styles.projectsGrid}>
-          {projects.map(project => {
+          {getFilteredProjects().map(project => {
             const stats = getProjectStats(project.id);
             const isOverdue = project.deadline && 
                              new Date(project.deadline) < new Date() && 
@@ -267,7 +426,7 @@ const AdminProjectPage: React.FC = () => {
                   <div className={styles.projectTitle}>
                     <h3>{project.name}</h3>
                     <div className={styles.projectMeta}>
-                      <span className={`${styles.statusBadge} ${styles[project.status]}`}>
+                      <span className={`${styles.statusBadge} ${styles[project.status] || styles.inactive}`}>
                         {project.status || 'inactive'}
                       </span>
                       {isOverdue && (
@@ -279,9 +438,10 @@ const AdminProjectPage: React.FC = () => {
                 
                 <p className={styles.projectDescription}>{project.description}</p>
                 
-                <p className={styles.clientCompany}>
-                  <FaUsers /> Client: {project.client_company_name || getCompanyName(project.client_company_id)}
-                </p>
+                <div className={styles.projectClient}>
+                  <FaUsers className={styles.clientIcon} />
+                  <span>Client: {project.client_company_name || getCompanyName(project.client_company_id)}</span>
+                </div>
 
                 {/* Progress Section */}
                 <div className={styles.progressSection}>
@@ -319,7 +479,7 @@ const AdminProjectPage: React.FC = () => {
                 {/* Deadline */}
                 {project.deadline && (
                   <div className={`${styles.deadlineInfo} ${isOverdue ? styles.overdue : ''}`}>
-                    <FaClock />
+                    <FaClock className={styles.deadlineIcon} />
                     <span>Deadline: {new Date(project.deadline).toLocaleDateString()}</span>
                     {isOverdue && (
                       <span className={styles.overdueText}>Overdue</span>
@@ -354,7 +514,7 @@ const AdminProjectPage: React.FC = () => {
           })}
         </div>
 
-        {projects.length === 0 && !loading && (
+        {getFilteredProjects().length === 0 && !loading && (
           <div className={styles.noProjects}>
             <p>No projects found. Create your first project to get started.</p>
           </div>
@@ -367,6 +527,8 @@ const AdminProjectPage: React.FC = () => {
           companies={companies}
           onClose={() => setShowCreateModal(false)}
           onSubmit={handleCreateProject}
+          handleFileUpload={handleFileUpload}
+          handleRemoveFile={handleRemoveFile}
         />
       )}
 
@@ -388,41 +550,106 @@ interface CreateProjectModalProps {
   companies: any[];
   onClose: () => void;
   onSubmit: (projectData: CreateProjectData) => void;
+  handleFileUpload: (file: File, setFormData: React.Dispatch<React.SetStateAction<any>>) => boolean;
+  handleRemoveFile: (setFormData: React.Dispatch<React.SetStateAction<any>>) => void;
 }
 
-const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ companies, onClose, onSubmit }) => {
-  const [formData, setFormData] = useState({
+const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ 
+  companies, 
+  onClose, 
+  onSubmit, 
+  handleFileUpload, 
+  handleRemoveFile 
+}) => {
+  const [formData, setFormData] = useState<CreateProjectData>({
     name: '',
     description: '',
-    client_company_id: '',
+    client_company_id: 0,
     deadline: '',
-    status: 'active'
+    status: 'active',
+    project_file: null
   });
   const [submitting, setSubmitting] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setSubmitting(true);
+  
+  // Validate required fields
+  if (!formData.name.trim() || !formData.description.trim() || !formData.client_company_id) {
+    alert('Please fill in all required fields');
+    setSubmitting(false);
+    return;
+  }
+
+  try {
+    await onSubmit({
+      ...formData,
+      client_company_id: formData.client_company_id,
+      deadline: formData.deadline || new Date().toISOString().split('T')[0],
+      // The file should already be in formData.project_file
+    });
+  } catch (error) {
+    console.error('Error submitting form:', error);
+  } finally {
+    setSubmitting(false);
+  }
+};
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const success = handleFileUpload(file, setFormData);
+      if (success) {
+        console.log('File selected successfully:', file.name);
+      }
+    }
+  };
+
+  // Handle drag and drop
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setSubmitting(true);
+    setDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setDragOver(false);
     
-    try {
-      await onSubmit({
-        ...formData,
-        client_company_id: parseInt(formData.client_company_id)
-      });
-    } catch (error) {
-      console.error('Error submitting form:', error);
-    } finally {
-      setSubmitting(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      const success = handleFileUpload(file, setFormData);
+      if (success) {
+        console.log('File dropped successfully:', file.name);
+      }
     }
   };
 
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
-        <h2>Create New Project</h2>
+        <div className={styles.modalHeader}>
+          <h2>Create New Project</h2>
+          <button 
+            type="button" 
+            className={styles.closeButton}
+            onClick={onClose}
+            disabled={submitting}
+            aria-label="Close modal"
+          >
+            <FaTimes />
+          </button>
+        </div>
         <form className={styles.projectForm} onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label>Project Name *</label>
+            <label className={styles.required}>Project Name</label>
             <input 
               type="text" 
               placeholder="Enter project name"
@@ -430,10 +657,12 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ companies, onCl
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               disabled={submitting}
+              className={styles.formInput}
             />
           </div>
+          
           <div className={styles.formGroup}>
-            <label>Description *</label>
+            <label className={styles.required}>Description</label>
             <textarea 
               placeholder="Enter project description" 
               rows={3}
@@ -441,15 +670,18 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ companies, onCl
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
               disabled={submitting}
+              className={styles.formTextarea}
             ></textarea>
           </div>
+          
           <div className={styles.formGroup}>
-            <label>Client Company *</label>
+            <label className={styles.required}>Client Company</label>
             <select
-              value={formData.client_company_id}
-              onChange={(e) => setFormData({ ...formData, client_company_id: e.target.value })}
+              value={formData.client_company_id || ''}
+              onChange={(e) => setFormData({ ...formData, client_company_id: parseInt(e.target.value) || 0 })}
               required
               disabled={submitting}
+              className={styles.formSelect}
             >
               <option value="">Select client company</option>
               {companies.map(company => (
@@ -459,28 +691,86 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ companies, onCl
               ))}
             </select>
           </div>
-          <div className={styles.formGroup}>
-            <label>Deadline</label>
-            <input 
-              type="date" 
-              value={formData.deadline}
-              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-              disabled={submitting}
-            />
+          
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>Deadline</label>
+              <input 
+                type="date" 
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                disabled={submitting}
+                className={styles.formInput}
+                min={new Date().toISOString().split('T')[0]}
+              />
+            </div>
+            
+            <div className={styles.formGroup}>
+              <label>Status</label>
+              <select
+                value={formData.status || 'active'}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                disabled={submitting}
+                className={styles.formSelect}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="completed">Completed</option>
+                <option value="on_hold">On Hold</option>
+              </select>
+            </div>
           </div>
+
+          {/* File Upload Section */}
           <div className={styles.formGroup}>
-            <label>Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              disabled={submitting}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="completed">Completed</option>
-              <option value="on_hold">On Hold</option>
-            </select>
+            <label>Project Document (PDF only, max 10MB)</label>
+            <div className={styles.fileUploadContainer}>
+              {!formData.project_file ? (
+                <div 
+                  className={`${styles.fileUploadArea} ${dragOver ? styles.dragOver : ''}`}
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handleFileChange}
+                    disabled={submitting}
+                    className={styles.fileInput}
+                    id="project-file-upload"
+                  />
+                  <label htmlFor="project-file-upload" className={styles.fileUploadLabel}>
+                    <FaPaperclip className={styles.uploadIcon} />
+                    <span className={styles.uploadText}>Choose PDF file or drag and drop</span>
+                    <p className={styles.fileHint}>Only PDF files are allowed. Max size: 10MB</p>
+                  </label>
+                </div>
+              ) : (
+                <div className={styles.filePreview}>
+                  <div className={styles.fileInfo}>
+                    <FaPaperclip className={styles.fileIcon} />
+                    <div className={styles.fileDetails}>
+                      <span className={styles.fileName}>{formData.project_file.name}</span>
+                      <span className={styles.fileSize}>
+                        ({(formData.project_file.size / (1024 * 1024)).toFixed(2)} MB)
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.removeFileBtn}
+                    onClick={() => handleRemoveFile(setFormData)}
+                    disabled={submitting}
+                    title="Remove file"
+                  >
+                    <FaTimes />
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
+
           <div className={styles.formActions}>
             <button 
               type="button" 
@@ -525,9 +815,9 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, companies,
   const [formData, setFormData] = useState({
     name: project.name,
     description: project.description,
-    client_company_id: project.client_company_id.toString(),
+    client_company_id: project.client_company_id,
     deadline: project.deadline || '',
-    status: project.status
+    status: project.status || 'active'
   });
   const [submitting, setSubmitting] = useState(false);
 
@@ -538,7 +828,7 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, companies,
     try {
       await onSubmit({
         ...formData,
-        client_company_id: parseInt(formData.client_company_id)
+        client_company_id: formData.client_company_id
       });
     } catch (error) {
       console.error('Error submitting form:', error);
@@ -550,35 +840,51 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, companies,
   return (
     <div className={styles.modalOverlay}>
       <div className={styles.modal}>
-        <h2>Edit Project</h2>
+        <div className={styles.modalHeader}>
+          <h2>Edit Project</h2>
+          <button 
+            type="button" 
+            className={styles.closeButton}
+            onClick={onClose}
+            disabled={submitting}
+            aria-label="Close modal"
+          >
+            <FaTimes />
+          </button>
+        </div>
         <form className={styles.projectForm} onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label>Project Name *</label>
+            <label className={styles.required}>Project Name</label>
             <input 
               type="text" 
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
               disabled={submitting}
+              className={styles.formInput}
             />
           </div>
+          
           <div className={styles.formGroup}>
-            <label>Description *</label>
+            <label className={styles.required}>Description</label>
             <textarea 
               rows={3}
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
               required
               disabled={submitting}
+              className={styles.formTextarea}
             ></textarea>
           </div>
+          
           <div className={styles.formGroup}>
-            <label>Client Company *</label>
+            <label className={styles.required}>Client Company</label>
             <select
               value={formData.client_company_id}
-              onChange={(e) => setFormData({ ...formData, client_company_id: e.target.value })}
+              onChange={(e) => setFormData({ ...formData, client_company_id: parseInt(e.target.value) })}
               required
               disabled={submitting}
+              className={styles.formSelect}
             >
               {companies.map(company => (
                 <option key={company.id} value={company.id}>
@@ -587,28 +893,35 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({ project, companies,
               ))}
             </select>
           </div>
-          <div className={styles.formGroup}>
-            <label>Deadline</label>
-            <input 
-              type="date" 
-              value={formData.deadline}
-              onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-              disabled={submitting}
-            />
+          
+          <div className={styles.formRow}>
+            <div className={styles.formGroup}>
+              <label>Deadline</label>
+              <input 
+                type="date" 
+                value={formData.deadline}
+                onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                disabled={submitting}
+                className={styles.formInput}
+              />
+            </div>
+            
+            <div className={styles.formGroup}>
+              <label>Status</label>
+              <select
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                disabled={submitting}
+                className={styles.formSelect}
+              >
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+                <option value="completed">Completed</option>
+                <option value="on_hold">On Hold</option>
+              </select>
+            </div>
           </div>
-          <div className={styles.formGroup}>
-            <label>Status</label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              disabled={submitting}
-            >
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-              <option value="completed">Completed</option>
-              <option value="on_hold">On Hold</option>
-            </select>
-          </div>
+          
           <div className={styles.formActions}>
             <button 
               type="button" 
