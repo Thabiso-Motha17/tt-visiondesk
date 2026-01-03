@@ -53,7 +53,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Fetch companies from API
+  
   const fetchCompanies = async () => {
     try {
       setLoading(true);
@@ -107,7 +107,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
       setCompanies(prev => [newCompany, ...prev]);
       setShowCreateModal(false);
       
-      // Show success message
+      
       alert('Company created successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create company');
@@ -142,7 +142,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
       setShowEditModal(false);
       setSelectedCompany(null);
       
-      // Show success message
+      
       alert('Company updated successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to update company');
@@ -172,7 +172,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
 
       setCompanies(prev => prev.filter(company => company.id !== companyId));
       
-      // Show success message
+      
       alert('Company deleted successfully!');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to delete company');
@@ -185,7 +185,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
     setShowEditModal(true);
   };
 
-  // Filter companies based on search term
+  
   const filteredCompanies = companies.filter(company => 
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     company.contact_email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -194,7 +194,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
 
   const stats = {
     total: companies.length,
-    active: companies.length, // All companies are considered active in this context
+    active: companies.length,  
     withPhone: companies.filter(company => company.phone).length,
     withAddress: companies.filter(company => company.address).length,
   };
@@ -420,7 +420,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
   );
 };
 
-// Create Company Modal Component
+
 interface CreateCompanyModalProps {
   onClose: () => void;
   onSubmit: (companyData: CreateCompanyData) => void;
@@ -508,7 +508,7 @@ const CreateCompanyModal: React.FC<CreateCompanyModalProps> = ({ onClose, onSubm
   );
 };
 
-// Edit Company Modal Component
+
 interface EditCompanyModalProps {
   company: Company;
   onClose: () => void;

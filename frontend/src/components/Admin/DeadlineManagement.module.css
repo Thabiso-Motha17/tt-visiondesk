@@ -4,7 +4,7 @@
   padding: 20px;
 }
 
-/* Page Header */
+
 .pageHeader {
   background: linear-gradient(135deg, rgb(12, 121, 93) 0%, #0a8c6c 100%);
   color: white;
@@ -57,7 +57,7 @@
   flex-wrap: wrap;
 }
 
-/* Loading State */
+
 .loading {
   display: flex;
   justify-content: center;
@@ -68,7 +68,7 @@
   font-weight: 600;
 }
 
-/* Deadline Statistics */
+
 .deadlineStats {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -103,7 +103,7 @@
   font-size: 0.9rem;
 }
 
-/* Filters Section */
+
 .filtersSection {
   background: white;
   padding: 20px;
@@ -141,7 +141,7 @@
   border-color: rgb(12, 121, 93);
 }
 
-/* Deadlines List */
+
 .deadlinesList {
   display: flex;
   flex-direction: column;
@@ -182,7 +182,7 @@
   background: #f0fff4;
 }
 
-/* Deadline Header */
+
 .deadlineHeader {
   display: flex;
   justify-content: space-between;
@@ -263,7 +263,7 @@
   color: #276749;
 }
 
-/* Status Icons */
+
 .statusOverdue {
   color: #e53e3e;
 }
@@ -280,7 +280,7 @@
   color: #48bb78;
 }
 
-/* Deadline Body */
+
 .deadlineBody {
   margin-bottom: 20px;
 }
@@ -339,7 +339,7 @@
   font-weight: 600;
 }
 
-/* Deadline Actions */
+
 .deadlineActions {
   display: flex;
   gap: 10px;
@@ -392,7 +392,7 @@
   transform: translateY(-1px);
 }
 
-/* No Deadlines State */
+
 .noDeadlines {
   text-align: center;
   padding: 60px 20px;
@@ -407,7 +407,7 @@
   margin: 0;
 }
 
-/* Buttons */
+
 .btnPrimary,
 .btnSecondary,
 .btnCancel {
@@ -451,7 +451,7 @@
   transform: translateY(-1px);
 }
 
-/* Modal Styles */
+
 .modalOverlay {
   position: fixed;
   top: 0;
@@ -486,7 +486,7 @@
   padding-bottom: 15px;
 }
 
-/* Form Styles */
+
 .deadlineForm {
   display: flex;
   flex-direction: column;
@@ -543,7 +543,7 @@
   border-top: 1px solid #e2e8f0;
 }
 
-/* Responsive Design */
+
 @media (max-width: 768px) {
   .deadlineManagement {
     padding: 15px;
