@@ -89,13 +89,13 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch data from API
+  
   const fetchDeadlineData = async () => {
     try {
       setLoading(true);
       setError(null);
 
-      // Fetch projects
+      
       const projectsResponse = await fetch('http://localhost:5000/api/projects', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -119,7 +119,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const tasksData: Task[] = await tasksResponse.json();
       setTasks(tasksData);
 
-      // Fetch milestones
+     
       const milestonesResponse = await fetch('http://localhost:5000/api/milestones', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -130,7 +130,6 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const milestonesData: Milestone[] = milestonesResponse.ok ? await milestonesResponse.json() : [];
       setMilestones(milestonesData);
 
-      // Fetch users for assignee information
       const usersResponse = await fetch('http://localhost:5000/api/users', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -141,15 +140,13 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const usersData: User[] = usersResponse.ok ? await usersResponse.json() : [];
       setUsers(usersData);
 
-      // Combine all deadlines from projects, tasks, and milestones
       const combinedDeadlines: Deadline[] = [];
 
-      // Add project deadlines
       projectsData.forEach(project => {
         if (project.deadline) {
           const status = calculateDeadlineStatus(project.deadline, project.status === 'completed');
           combinedDeadlines.push({
-            id: project.id * 1000, // Unique ID pattern
+            id: project.id * 1000, 
             project_id: project.id,
             project_name: project.name,
             type: 'project',
@@ -157,20 +154,19 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             description: project.description,
             due_date: project.deadline,
             status,
-            reminder_sent: false, // This would come from a reminders table in real app
+            reminder_sent: false, 
             created_at: new Date().toISOString()
           });
         }
       });
 
-      // Add task deadlines
       tasksData.forEach(task => {
         if (task.deadline) {
           const status = calculateDeadlineStatus(task.deadline, task.status === 'completed' || task.progress_percentage === 100);
           const assignee = usersData.find(user => user.id === task.assigned_to);
           
           combinedDeadlines.push({
-            id: task.id * 1000 + 1, // Unique ID pattern
+            id: task.id * 1000 + 1, 
             project_id: task.project_id,
             project_name: task.project_name || `Project ${task.project_id}`,
             task_id: task.id,
@@ -188,14 +184,14 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
       });
 
-      // Add milestone deadlines
+      
       milestonesData.forEach(milestone => {
         if (milestone.deadline) {
           const status = calculateDeadlineStatus(milestone.deadline, milestone.completed);
           const project = projectsData.find(p => p.id === milestone.project_id);
           
           combinedDeadlines.push({
-            id: milestone.id * 1000 + 2, // Unique ID pattern
+            id: milestone.id * 1000 + 2, 
             project_id: milestone.project_id,
             project_name: project?.name || `Project ${milestone.project_id}`,
             type: 'milestone',
@@ -209,7 +205,6 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
       });
 
-      // Sort by due date (closest first)
       combinedDeadlines.sort((a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime());
       
       setDeadlines(combinedDeadlines);
@@ -246,7 +241,6 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const sendReminder = async (deadlineId: number) => {
     try {
-      // In a real app, this would call an API to send email/slack notifications
       console.log('Sending reminder for deadline:', deadlineId);
       
       setDeadlines(deadlines.map(deadline => 
@@ -266,7 +260,6 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         (d.status === 'due_today' || d.status === 'overdue') && !d.reminder_sent
       );
       
-      // In a real app, this would call a bulk reminder API
       console.log('Sending bulk reminders for:', upcomingDeadlines);
       
       setDeadlines(deadlines.map(deadline => 
@@ -286,9 +279,8 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     try {
       setError(null);
       
-      // Create new deadline object
       const newDeadline: Deadline = {
-        id: Date.now(), // Temporary ID
+        id: Date.now(), 
         project_id: parseInt(deadlineData.project_id),
         project_name: projects.find(p => p.id === parseInt(deadlineData.project_id))?.name || 'Unknown Project',
         task_id: deadlineData.task_id ? parseInt(deadlineData.task_id) : undefined,
@@ -304,7 +296,6 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         created_at: new Date().toISOString()
       };
 
-      // In a real app, this would call your API to create a new deadline
       setDeadlines([...deadlines, newDeadline]);
       setShowCreateModal(false);
       alert('Deadline created successfully!');

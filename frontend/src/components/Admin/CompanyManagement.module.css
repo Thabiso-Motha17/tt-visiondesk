@@ -4,7 +4,7 @@
   min-height: 100vh;
 }
 
-/* Page Header */
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -71,7 +71,7 @@
   transform: none;
 }
 
-/* Error Message */
+
 .error-message {
   background: #fed7d7;
   color: #c53030;
@@ -99,7 +99,7 @@
   justify-content: center;
 }
 
-/* Statistics Grid */
+
 .company-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -162,7 +162,7 @@
   font-size: 0.9rem;
 }
 
-/* Filters Section */
+
 .filters-section {
   background: white;
   padding: 1.5rem;
@@ -235,7 +235,7 @@
   border-color: #4299e1;
 }
 
-/* Table Container */
+
 .companies-table-container {
   background: white;
   border-radius: 12px;
@@ -275,7 +275,7 @@
   background: #cbd5e0;
 }
 
-/* Companies Table */
+
 .companies-table {
   width: 100%;
 }
@@ -321,7 +321,7 @@
   align-items: center;
 }
 
-/* Company Info Column */
+
 .company-main-info h4 {
   margin: 0 0 0.25rem 0;
   font-size: 1rem;
@@ -335,7 +335,7 @@
   color: #718096;
 }
 
-/* Contact Column */
+
 .contact-email {
   display: flex;
   align-items: center;
@@ -344,7 +344,7 @@
   font-size: 0.9rem;
 }
 
-/* Phone Column */
+
 .phone-number {
   display: flex;
   align-items: center;
@@ -353,7 +353,7 @@
   font-size: 0.9rem;
 }
 
-/* Address Column */
+
 .company-address {
   display: flex;
   align-items: flex-start;
@@ -369,13 +369,13 @@
   font-size: 0.875rem;
 }
 
-/* Created Date Column */
+
 .created-date {
   color: #718096;
   font-size: 0.875rem;
 }
 
-/* Actions Column */
+
 .action-buttons {
   display: flex;
   gap: 0.5rem;
@@ -430,7 +430,7 @@
   transform: none;
 }
 
-/* No Companies State */
+
 .no-companies {
   padding: 3rem;
   text-align: center;
@@ -442,7 +442,7 @@
   font-size: 1rem;
 }
 
-/* Loading State */
+
 .loading {
   display: flex;
   justify-content: center;
@@ -452,7 +452,7 @@
   color: #718096;
 }
 
-/* Modal Styles */
+
 .modal-overlay {
   position: fixed;
   top: 0;
@@ -485,7 +485,7 @@
   color: #2d3748;
 }
 
-/* Form Styles */
+
 .company-form {
   padding: 1.5rem;
 }
@@ -534,7 +534,7 @@
   box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
-/* Company Info Section */
+
 .company-info-section {
   background: #f7fafc;
   padding: 1.25rem;
@@ -571,7 +571,7 @@
   color: #2d3748;
 }
 
-/* Form Actions */
+
 .form-actions {
   display: flex;
   gap: 1rem;
@@ -580,7 +580,7 @@
   border-top: 1px solid #e2e8f0;
 }
 
-/* Responsive Design */
+
 @media (max-width: 1024px) {
   .company-management {
     padding: 1rem;

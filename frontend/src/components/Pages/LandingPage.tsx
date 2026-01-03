@@ -213,7 +213,7 @@ const LandingPage = () => {
                 <strong>Employee:</strong> dev@visiondesk.com / password
               </div>
               <div className="demo-account-item">
-                <strong>Client:</strong> client@company.com / password
+                <strong>Client:</strong> client@techsolutions.com / password
               </div>
             </div>
           </div>
