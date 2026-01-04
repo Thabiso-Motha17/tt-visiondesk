@@ -1159,6 +1159,81 @@ app.delete('/api/subtasks/:id', authenticateToken, async (req, res) => {
 });
 
 
+app.get('/api/ratings/dashboard/summary', authenticateToken, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin' && req.user.role !== 'manager') {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    const projectRatingsAggregate = await pool.query(`
+      SELECT 
+        COALESCE(AVG(rating)::numeric, 0.00) as average_rating,
+        COUNT(*) as total_ratings,
+        COUNT(DISTINCT project_id) as projects_rated,
+        COUNT(DISTINCT user_id) as unique_raters
+      FROM project_ratings
+    `);
+
+  
+    const taskRatingsAggregate = await pool.query(`
+      SELECT 
+        COALESCE(AVG(rating)::numeric, 0.00) as average_rating,
+        COUNT(*) as total_ratings,
+        COUNT(DISTINCT task_id) as tasks_rated,
+        COUNT(DISTINCT user_id) as unique_raters
+      FROM task_ratings
+    `);
+
+    const recentProjectRatings = await pool.query(`
+      SELECT 
+        pr.*,
+        p.name as project_name,
+        u.name as user_name,
+        u.role as user_role
+      FROM project_ratings pr
+      JOIN projects p ON pr.project_id = p.id
+      JOIN users u ON pr.user_id = u.id
+      ORDER BY pr.created_at DESC
+      LIMIT 10
+    `);
+    
+    const recentTaskRatings = await pool.query(`
+      SELECT 
+        tr.*,
+        t.title as task_title,
+        p.name as project_name,
+        u.name as user_name,
+        u.role as user_role
+      FROM task_ratings tr
+      JOIN tasks t ON tr.task_id = t.id
+      JOIN projects p ON t.project_id = p.id
+      JOIN users u ON tr.user_id = u.id
+      ORDER BY tr.created_at DESC
+      LIMIT 10
+    `);
+
+    res.json({
+      project_ratings: {
+        average_rating: parseFloat(projectRatingsAggregate.rows[0]?.average_rating || 0),
+        total_ratings: parseInt(projectRatingsAggregate.rows[0]?.total_ratings || 0),
+        projects_rated: parseInt(projectRatingsAggregate.rows[0]?.projects_rated || 0),
+        unique_raters: parseInt(projectRatingsAggregate.rows[0]?.unique_raters || 0)
+      },
+      task_ratings: {
+        average_rating: parseFloat(taskRatingsAggregate.rows[0]?.average_rating || 0),
+        total_ratings: parseInt(taskRatingsAggregate.rows[0]?.total_ratings || 0),
+        tasks_rated: parseInt(taskRatingsAggregate.rows[0]?.tasks_rated || 0),
+        unique_raters: parseInt(taskRatingsAggregate.rows[0]?.unique_raters || 0)
+      },
+      recent_project_ratings: recentProjectRatings.rows,
+      recent_task_ratings: recentTaskRatings.rows
+    });
+
+  } catch (error) {
+    console.error('Error fetching ratings dashboard:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 
 app.get('/api/health', (req, res) => {

@@ -8,11 +8,8 @@ import {
   FaTrash, 
   FaSave,
   FaTimes,
-  FaChartLine,
-  FaFlag,
   FaCalendar,
   FaCheckCircle,
-  FaExclamationTriangle
 } from 'react-icons/fa';
 import styles from './ProjectDefinition.module.css';
 
@@ -54,7 +51,6 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch projects from API
   const fetchProjects = async () => {
     try {
       setLoading(true);
@@ -297,8 +293,6 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </button>
       </div>
 
-
-      {/* Projects List */}
       <div className={styles.projectsList}>
         {projects.map(project => (
           <div key={project.id} className={styles.projectCard}>
@@ -407,7 +401,6 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         </div>
       )}
 
-      {/* Create Project Modal */}
       {showCreateModal && (
         <CreateProjectModal
           companies={companies}
@@ -416,7 +409,6 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         />
       )}
 
-      {/* Edit Project Modal */}
       {editingProject && (
         <EditProjectModal
           project={editingProject}
@@ -432,7 +424,6 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   );
 };
 
-// Create Project Modal
 interface CreateProjectModalProps {
   companies: Company[];
   onClose: () => void;
@@ -457,7 +448,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ companies, onCl
     setSubmitting(true);
     
     try {
-      // Filter out empty success indicators and milestones
       const submitData = {
         ...formData,
         success_indicators: formData.success_indicators.filter(indicator => indicator.trim() !== ''),
@@ -708,7 +698,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ companies, onCl
   );
 };
 
-// Edit Project Modal
 interface EditProjectModalProps {
   project: Project;
   companies: Company[];
@@ -745,7 +734,6 @@ const EditProjectModal: React.FC<EditProjectModalProps> = ({
     setSubmitting(true);
     
     try {
-      // Filter out empty success indicators
       const submitData = {
         ...formData,
         success_indicators: formData.success_indicators.filter(indicator => indicator.trim() !== '')

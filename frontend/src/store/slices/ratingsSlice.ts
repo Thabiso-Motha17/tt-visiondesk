@@ -277,6 +277,7 @@ export const deleteTaskRating = createAsyncThunk<
 );
 
 // Async thunk for ratings dashboard
+// Add debug in your ratingsSlice
 export const fetchRatingsDashboard = createAsyncThunk<
   RatingsDashboard,
   void,
@@ -286,6 +287,8 @@ export const fetchRatingsDashboard = createAsyncThunk<
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
+      console.log('DEBUG - Token from localStorage:', token);
+      
       const response = await fetch('/api/ratings/dashboard/summary', {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -293,12 +296,19 @@ export const fetchRatingsDashboard = createAsyncThunk<
         },
       });
 
+      console.log('DEBUG - Response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch ratings dashboard');
+        const errorText = await response.text();
+        console.log('DEBUG - Error response:', errorText);
+        throw new Error(`Failed to fetch ratings dashboard: ${response.status} ${response.statusText}`);
       }
 
-      return await response.json();
+      const data = await response.json();
+      console.log('DEBUG - Response data:', data);
+      return data;
     } catch (error) {
+      console.log('DEBUG - Catch error:', error);
       return rejectWithValue((error as Error).message);
     }
   }
