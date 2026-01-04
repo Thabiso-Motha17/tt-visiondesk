@@ -311,7 +311,6 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     try {
       setError(null);
       
-      // Update deadline object
       const updatedDeadline: Deadline = {
         ...editingDeadline,
         title: deadlineData.title,
