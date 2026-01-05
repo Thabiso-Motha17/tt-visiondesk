@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type{ RootState } from '../../store/store';
 import { fetchProjects } from '../../store/slices/projectSlice';
@@ -8,9 +8,6 @@ import {
   FaCheckCircle, 
   FaClock, 
   FaExclamationTriangle,
-  FaEye,
-  FaComment,
-  FaUpload
 } from 'react-icons/fa';
 import styles from './DeveloperProjectPage.module.css';
 

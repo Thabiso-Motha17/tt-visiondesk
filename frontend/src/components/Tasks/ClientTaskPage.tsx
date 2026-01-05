@@ -23,11 +23,7 @@ import {
   selectTaskRatings,
   selectTaskAverageRating,
   selectUserTaskRating,
-  selectTaskRatingByType,
-  type TaskRating
 } from '../../store/slices/ratingsSlice';
-
-import { API_URL } from '../../../api.ts';
 
 interface Task {
   id: number;
@@ -285,14 +281,10 @@ interface TaskCardProps {
 const TaskCard: React.FC<TaskCardProps> = ({
   task,
   onViewDetails,
-  onRequestClarification,
   onRateTask
 }) => {
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
-  const taskRatings = useSelector((state: RootState) => 
-    selectTaskRatings(state, task.id)
-  );
   const averageRating = useSelector((state: RootState) => 
     selectTaskAverageRating(state, task.id)
   );
@@ -407,8 +399,6 @@ interface TaskDetailsModalProps {
 const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   task,
   onClose,
-  onDownloadDetails,
-  onRequestClarification,
   onRateTask
 }) => {
   const dispatch = useDispatch();
@@ -421,12 +411,6 @@ const TaskDetailsModal: React.FC<TaskDetailsModalProps> = ({
   );
   const userQualityRating = useSelector((state: RootState) => 
     selectUserTaskRating(state, task.id, user?.id || 0, 'quality')
-  );
-  const userCommunicationRating = useSelector((state: RootState) => 
-    selectUserTaskRating(state, task.id, user?.id || 0, 'communication')
-  );
-  const userTimelinessRating = useSelector((state: RootState) => 
-    selectUserTaskRating(state, task.id, user?.id || 0, 'timeliness')
   );
 
   // Fetch ratings when modal opens

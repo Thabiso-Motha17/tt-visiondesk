@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { 
@@ -12,7 +12,7 @@ import {
   FaCheckCircle,
 } from 'react-icons/fa';
 import styles from './ProjectDefinition.module.css';
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface Project {
   id: number;
@@ -293,6 +293,12 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <FaPlus /> Define New Project
         </button>
       </div>
+
+      {error && (
+        <div className={styles.error}>
+          {error}
+        </div>
+      )}
 
       <div className={styles.projectsList}>
         {projects.map(project => (

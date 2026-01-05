@@ -4,7 +4,6 @@ import type { RootState } from '../../store/store';
 import { 
   FaArrowLeft, 
   FaDownload, 
-  FaFilter, 
   FaChartBar, 
   FaUsers, 
   FaTasks, 
@@ -16,7 +15,7 @@ import {
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import styles from './ReportingAnalytics.module.css';
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface Project {
   id: number;
@@ -362,7 +361,7 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       doc.text('TEAM PERFORMANCE', margin, yPosition);
       yPosition += 10;
 
-      teamPerformanceData.forEach((member, index) => {
+      teamPerformanceData.forEach((member) => {
         // Check for page break before each team member
         if (yPosition > pageHeight - 40) {
           doc.addPage();
@@ -472,6 +471,10 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   const projectProgressData = getProjectProgressData();
   const teamPerformanceData = getTeamPerformanceData();
 
+  if (error) {
+    return <div style={{ color: 'red' }}>Error loading reports: {error}</div>;
+  }
+
   if (loading) return <div className={styles.loading}>Loading Reports...</div>;
 
   return (
@@ -484,14 +487,25 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
           <h1>Reporting & Analytics</h1>
           <p>Generate progress reports and view project health overview</p>
         </div>
-        <button 
-          className={styles['btn-primary']} 
-          onClick={generatePDFReport}
-          disabled={generatingPDF}
-        >
-          <FaDownload /> 
-          {generatingPDF ? 'Generating PDF...' : 'Generate PDF Report'}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button 
+            className={styles['btn-primary']} 
+            onClick={generatePDFReport}
+            disabled={generatingPDF}
+          >
+            <FaDownload /> 
+            {generatingPDF ? 'Generating PDF...' : 'Generate PDF Report'}
+          </button>
+          <button
+            className={styles['btn-secondary']}
+            onClick={generateReportWithScreenshot}
+            disabled={generatingPDF}
+            style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+          >
+            <FaDownload />
+            {generatingPDF ? 'Generating PDF...' : 'Generate Snapshot PDF'}
+          </button>
+        </div>
       </div>
 
       {/* Report Controls */}

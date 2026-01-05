@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import type { RootState, AppDispatch } from '../../store/store.ts';
+import type { RootState, AppDispatch } from '../../store/store';
 import { 
   fetchTasks, 
-  updateTaskStatus,
   updateTask,
   clearError as clearTaskError,
   type TaskStatus
@@ -13,9 +12,6 @@ import {
   FaClock, 
   FaExclamationTriangle,
   FaEdit,
-  FaComment,
-  FaUpload,
-  FaFilter,
   FaSearch,
   FaProjectDiagram,
   FaSave,
@@ -41,7 +37,7 @@ interface Task {
 }
 
 const DeveloperTaskPage: React.FC = () => {
-  const { tasks, loading, error } = useSelector((state: RootState) => state.tasks);
+  const { tasks, loading } = useSelector((state: RootState) => state.tasks);
   const { user } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch<AppDispatch>();
   

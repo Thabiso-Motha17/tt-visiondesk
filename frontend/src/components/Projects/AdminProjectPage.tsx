@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import type { RootState, AppDispatch } from '../../store/store.ts';
+import type { RootState, AppDispatch } from '../../store/store';
 import { 
   FaPlus, 
   FaEdit, 
@@ -10,7 +10,6 @@ import {
   FaClock,
   FaCheckCircle,
   FaExclamationTriangle,
-  FaEye,
   FaDownload,
   FaSave,
   FaPaperclip,
@@ -50,19 +49,6 @@ interface Project {
   updated_at: string;
 }
 
-interface Task {
-  id: number;
-  title: string;
-  description: string;
-  project_id: number;
-  assigned_to: number;
-  status: string;
-  priority: string;
-  progress_percentage: number;
-  deadline: string;
-  created_by: number;
-}
-
 interface CreateProjectData {
   name: string;
   description: string;
@@ -74,10 +60,10 @@ interface CreateProjectData {
 
 const AdminProjectPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
-  const { user, token } = useSelector((state: RootState) => state.auth);
-  const { projects, loading: projectsLoading, error: projectsError } = useSelector((state: RootState) => state.projects);
-  const { tasks, loading: tasksLoading, error: tasksError } = useSelector((state: RootState) => state.tasks);
-  const { companies, loading: companiesLoading, error: companiesError } = useSelector((state: RootState) => state.companies);
+  const { user } = useSelector((state: RootState) => state.auth);
+  const { projects, loading: projectsLoading } = useSelector((state: RootState) => state.projects);
+  const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
+  const { companies, loading: companiesLoading } = useSelector((state: RootState) => state.companies);
   
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -108,7 +94,7 @@ const AdminProjectPage: React.FC = () => {
       };
     }
 
-    const result = await dispatch(createProject({
+    await dispatch(createProject({
       ...projectData,
       ...documentData,
       admin_id: user?.id || 0
@@ -127,7 +113,7 @@ const AdminProjectPage: React.FC = () => {
     if (!editingProject) return;
 
     try {
-      const result = await dispatch(updateProject({
+      await dispatch(updateProject({
         projectId: editingProject.id,
         projectData: {
           name: projectData.name,

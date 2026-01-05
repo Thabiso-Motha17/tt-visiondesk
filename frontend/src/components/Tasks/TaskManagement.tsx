@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSelector } from 'react-redux';
-import type{ RootState } from '../../store/store.ts';
+import type{ RootState } from '../../store/store';
 import AdminTaskPage from './AdminTaskPage';
 import DeveloperTaskPage from './DeveloperTaskPage';
 import ClientTaskPage from './ClientTaskPage';

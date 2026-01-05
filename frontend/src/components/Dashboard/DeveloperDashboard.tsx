@@ -7,12 +7,8 @@ import {
   FaCheckCircle, 
   FaClock, 
   FaExclamationTriangle,
-  FaUpload,
-  FaComment,
-  FaFileUpload,
   FaQuestionCircle,
   FaUserFriends,
-  FaChartLine
 } from 'react-icons/fa';
 import styles from './DeveloperDashboard.module.css';
 import TextType from '../../ui/TextType';
@@ -306,33 +302,9 @@ const DeveloperDashboard: React.FC = () => {
     }));
   };
 
-  const handleViewPerformance = () => {
-    alert('Performance tracking feature would show metrics and charts here');
-  };
-
-  const handleTeamCollaboration = () => {
-    alert('Team collaboration feature would show team discussions and chat here');
-  };
-
-  // Modal openers
-  const openUploadModal = (task: Task) => {
-    setSelectedTask(task);
-    setActiveModal('upload');
-  };
-
-  const openClarificationModal = (task: Task) => {
-    setSelectedTask(task);
-    setActiveModal('clarification');
-  };
-
   const openStatusModal = (task: Task) => {
     setSelectedTask(task);
     setActiveModal('status');
-  };
-
-  const openCommentModal = (task: Task) => {
-    setSelectedTask(task);
-    setActiveModal('comment');
   };
 
   const closeModal = () => {
@@ -503,6 +475,18 @@ const DeveloperDashboard: React.FC = () => {
           task={selectedTask}
           onClose={closeModal}
           onRequest={handleRequestClarification}
+        />
+      )}
+
+      {activeModal === 'upload' && (
+        <UploadDeliverableModal
+          task={selectedTask}
+          onClose={closeModal}
+          onUpload={(taskId, file, note) => {
+            // TODO: replace with real upload logic (dispatch or API call)
+            console.log('Uploading deliverable', { taskId, file, note });
+            closeModal();
+          }}
         />
       )}
 
