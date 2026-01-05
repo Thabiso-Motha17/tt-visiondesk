@@ -23,70 +23,20 @@ import TextType from '../../ui/TextType';
 import { MdBusiness } from 'react-icons/md';
 import UserManagement from '../Admin/UserManagement';
 import CompanyManagement from '../Admin/CompanyManagement';
-import { API_URL } from '../../../api.ts';
-
-// Define the ratings types locally since we won't use the slice
-interface ProjectRating {
-  id: number;
-  project_id: number;
-  user_id: number;
-  rating: number;
-  comment?: string;
-  would_recommend?: boolean;
-  created_at: string;
-  updated_at: string;
-  user_name?: string;
-  user_role?: string;
-  project_name?: string;
-}
-
-interface RatingsDashboard {
-  project_ratings: {
-    total_ratings: number;
-    average_rating: number;
-    projects_rated: number;
-    unique_raters: number;
-  };
-  task_ratings: {
-    total_ratings: number;
-    average_rating: number;
-    tasks_rated: number;
-    unique_raters: number;
-  };
-  recent_project_ratings: ProjectRating[];
-  recent_task_ratings: any[];
-}
+import { 
+  fetchRatingsDashboard, 
+  selectRatingsDashboard,
+  selectRatingsLoading,
+  selectRatingsError,
+  clearRatingsError
+} from '../../store/slices/ratingsSlice';
 
 const ManagerDashboard: React.FC = () => {
   const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
   const { projects, loading: projectsLoading } = useSelector((state: RootState) => state.projects);
-  
-  const [ratingsDashboard, setRatingsDashboard] = useState<RatingsDashboard>({
-    project_ratings: {
-      total_ratings: 0,
-      average_rating: 0,
-      projects_rated: 0,
-      unique_raters: 0,
-    },
-    task_ratings: {
-      total_ratings: 0,
-      average_rating: 0,
-      tasks_rated: 0,
-      unique_raters: 0,
-    },
-    recent_project_ratings: [],
-    recent_task_ratings: [],
-  });
-  const [ratingsLoading, setRatingsLoading] = useState({
-    dashboard: false,
-    project: false,
-    task: false,
-  });
-  const [ratingsError, setRatingsError] = useState({
-    dashboard: null as string | null,
-    project: null as string | null,
-    task: null as string | null,
-  });
+  const ratingsDashboard = useSelector(selectRatingsDashboard);
+  const ratingsLoading = useSelector(selectRatingsLoading);
+  const ratingsError = useSelector(selectRatingsError);
   
   const dispatch = useDispatch();
 
@@ -102,81 +52,18 @@ const ManagerDashboard: React.FC = () => {
     'client-ratings'
   >('dashboard');
 
-  // Direct fetch function for ratings
-  const fetchRatingsDashboardDirect = async () => {
-    setRatingsLoading(prev => ({ ...prev, dashboard: true }));
-    setRatingsError(prev => ({ ...prev, dashboard: null }));
-    
-    try {
-      console.log('🔍 Fetching ratings dashboard...');
-      const token = localStorage.getItem('token');
-      
-      // Test with different URLs to find the correct one
-      const urlsToTry = [
-        `${API_URL}/api/ratings/dashboard`,
-        `${API_URL}/api/ratings/dashboard`,
-        `${API_URL}/api/ratings/dashboard/summary`,
-        `${API_URL}/api/ratings/dashboard/summary`,
-      ];
-      
-      let response = null;
-      let lastError = null;
-      
-      for (const url of urlsToTry) {
-        try {
-          console.log(`🔍 Trying URL: ${url}`);
-          response = await fetch(url, {
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-          });
-          
-          console.log(`🔍 Response for ${url}:`, response.status, response.statusText);
-          
-          if (response.ok) {
-            const text = await response.text();
-            console.log(`🔍 Raw response from ${url}:`, text.substring(0, 200));
-            
-            // Check if it's HTML (404 page)
-            if (text.trim().startsWith('<!DOCTYPE') || text.trim().startsWith('<html')) {
-              console.error(`🔍 Got HTML response from ${url}, trying next...`);
-              continue;
-            }
-            
-            try {
-              const data = JSON.parse(text);
-              console.log('🔍 Parsed data:', data);
-              setRatingsDashboard(data);
-              setRatingsLoading(prev => ({ ...prev, dashboard: false }));
-              return;
-            } catch (parseError) {
-              console.error(`🔍 JSON parse error for ${url}:`, parseError);
-              continue;
-            }
-          }
-        } catch (error) {
-          lastError = error;
-          console.error(`🔍 Error for ${url}:`, error);
-        }
-      }
-      
-      // If we get here, none of the URLs worked
-      throw new Error(lastError instanceof Error ? lastError.message : 'Failed to fetch ratings from all attempted URLs');
-      
-    } catch (error: any) {
-      console.error('🔍 Error fetching ratings dashboard:', error);
-      setRatingsError(prev => ({ ...prev, dashboard: error.message || 'Failed to fetch ratings' }));
-    } finally {
-      setRatingsLoading(prev => ({ ...prev, dashboard: false }));
-    }
-  };
-
   useEffect(() => {
     dispatch(fetchTasks() as any);
     dispatch(fetchProjects() as any);
-    fetchRatingsDashboardDirect();
+    dispatch(fetchRatingsDashboard() as any);
   }, [dispatch]);
+
+  // Clear errors when changing views
+  useEffect(() => {
+    if (ratingsError.dashboard) {
+      dispatch(clearRatingsError('dashboard'));
+    }
+  }, [activeView, dispatch, ratingsError.dashboard]);
 
   // Statistics calculations
   const stats = {
@@ -189,7 +76,7 @@ const ManagerDashboard: React.FC = () => {
     overdueTasks: tasks.filter(task => 
       task.deadline && new Date(task.deadline) < new Date() && task.status !== 'completed'
     ).length,
-    // Ratings stats from direct fetch
+    // Ratings stats from Redux
     averageProjectRating: ratingsDashboard.project_ratings.average_rating || 0,
     totalProjectRatings: ratingsDashboard.project_ratings.total_ratings || 0,
     projectsRated: ratingsDashboard.project_ratings.projects_rated || 0,
@@ -211,15 +98,7 @@ const ManagerDashboard: React.FC = () => {
       case 'company-management':
         return <CompanyManagement onBack={() => setActiveView('dashboard')} />;
       case 'client-ratings':
-        return (
-          <ClientRatingsView 
-            onBack={() => setActiveView('dashboard')}
-            ratingsDashboard={ratingsDashboard}
-            ratingsLoading={ratingsLoading.dashboard}
-            ratingsError={ratingsError.dashboard}
-            onRetry={fetchRatingsDashboardDirect}
-          />
-        );
+        return <ClientRatingsView onBack={() => setActiveView('dashboard')} />;
       default:
         return renderDashboard();
     }
@@ -307,19 +186,10 @@ const ManagerDashboard: React.FC = () => {
         <div className={styles.errorMessage}>
           <p>Error loading ratings: {ratingsError.dashboard}</p>
           <button 
-            onClick={fetchRatingsDashboardDirect}
+            onClick={() => dispatch(fetchRatingsDashboard() as any)}
             className={styles.retryButton}
           >
             Retry
-          </button>
-          <button 
-            onClick={() => {
-              console.log('🔍 Current ratings state:', ratingsDashboard);
-              console.log('🔍 Token:', localStorage.getItem('token'));
-            }}
-            className={styles.debugButton}
-          >
-            Debug
           </button>
         </div>
       )}
@@ -447,10 +317,10 @@ const ManagerDashboard: React.FC = () => {
         <div className={styles.activitySection}>
           <h3>Recent Client Ratings</h3>
           <div className={styles.activityList}>
-            {ratingsDashboard.recent_project_ratings.slice(0, 5).map((rating: ProjectRating) => (
+            {ratingsDashboard.recent_project_ratings.slice(0, 5).map((rating: any) => (
               <div key={rating.id} className={styles.activityItem}>
                 <div className={styles.ratingInfo}>
-                  <span className={styles.projectName}>{rating.project_name || `Project ${rating.project_id}`}</span>
+                  <span className={styles.projectName}>{rating.project_name}</span>
                   <div className={styles.ratingStars}>
                     {[1, 2, 3, 4, 5].map((star) => (
                       <FaStar 
@@ -487,24 +357,19 @@ const ManagerDashboard: React.FC = () => {
 // Client Ratings View Component
 interface ClientRatingsViewProps {
   onBack: () => void;
-  ratingsDashboard: RatingsDashboard;
-  ratingsLoading: boolean;
-  ratingsError: string | null;
-  onRetry: () => void;
 }
 
-const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({ 
-  onBack, 
-  ratingsDashboard, 
-  ratingsLoading, 
-  ratingsError, 
-  onRetry 
-}) => {
+const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({ onBack }) => {
+  const ratingsDashboard = useSelector(selectRatingsDashboard);
+  const ratingsLoading = useSelector(selectRatingsLoading);
+  const ratingsError = useSelector(selectRatingsError);
+  const dispatch = useDispatch();
+
   const [filter, setFilter] = useState<'all' | 'high' | 'low'>('all');
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filter ratings based on search and filter criteria
-  const filteredRatings = ratingsDashboard.recent_project_ratings.filter((rating: ProjectRating) => {
+  const filteredRatings = ratingsDashboard.recent_project_ratings.filter((rating: any) => {
     const matchesSearch = rating.project_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          rating.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          rating.comment?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -523,8 +388,7 @@ const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({
     return '#F44336'; // Red
   };
 
-  const getRecommendationText = (wouldRecommend?: boolean) => {
-    if (wouldRecommend === undefined) return { text: 'No recommendation', class: '' };
+  const getRecommendationText = (wouldRecommend: boolean) => {
     return wouldRecommend ? 
       { text: 'Would Recommend', class: styles.recommended } : 
       { text: 'Would Not Recommend', class: styles.notRecommended };
@@ -533,7 +397,7 @@ const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({
   // Calculate rating distribution
   const ratingDistribution = [5, 4, 3, 2, 1].map(star => {
     const count = ratingsDashboard.recent_project_ratings.filter(
-      (r: ProjectRating) => r.rating === star
+      (r: any) => r.rating === star
     ).length;
     const total = ratingsDashboard.recent_project_ratings.length;
     const percentage = total > 0 ? (count / total) * 100 : 0;
@@ -541,7 +405,7 @@ const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({
     return { star, count, percentage };
   });
 
-  if (ratingsError) {
+  if (ratingsError.dashboard) {
     return (
       <div className={styles.ratingsView}>
         <div className={styles.viewHeader}>
@@ -551,9 +415,9 @@ const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({
           <h1>Client Ratings & Feedback</h1>
         </div>
         <div className={styles.errorMessage}>
-          <p>Error loading ratings: {ratingsError}</p>
+          <p>Error loading ratings: {ratingsError.dashboard}</p>
           <button 
-            onClick={onRetry}
+            onClick={() => dispatch(fetchRatingsDashboard() as any)}
             className={styles.retryButton}
           >
             Retry
@@ -654,7 +518,7 @@ const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({
       <div className={styles.ratingsList}>
         <h2>Client Feedback ({filteredRatings.length})</h2>
         
-        {ratingsLoading ? (
+        {ratingsLoading.dashboard ? (
           <div className={styles.loading}>Loading ratings...</div>
         ) : filteredRatings.length === 0 ? (
           <div className={styles.noData}>
@@ -662,7 +526,7 @@ const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({
           </div>
         ) : (
           <div className={styles.ratingsGrid}>
-            {filteredRatings.map((rating: ProjectRating) => {
+            {filteredRatings.map((rating: any) => {
               const recommendation = getRecommendationText(rating.would_recommend);
               return (
                 <div key={rating.id} className={styles.ratingCard}>
@@ -691,11 +555,9 @@ const ClientRatingsView: React.FC<ClientRatingsViewProps> = ({
                       ))}
                     </div>
                     
-                    {rating.would_recommend !== undefined && (
-                      <div className={`${styles.recommendation} ${recommendation.class}`}>
-                        {recommendation.text}
-                      </div>
-                    )}
+                    <div className={`${styles.recommendation} ${recommendation.class}`}>
+                      {recommendation.text}
+                    </div>
                   </div>
 
                   {rating.user_name && (

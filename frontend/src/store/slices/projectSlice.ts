@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { API_URL } from '../../../api';
 
 interface Project {
   id: number;
@@ -69,7 +70,7 @@ export const fetchProjects = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch(`${API_URL}/api/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -93,7 +94,7 @@ export const fetchProjectById = createAsyncThunk(
   async (projectId: number, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -123,7 +124,7 @@ export const createProject = createAsyncThunk(
         project_document_length: projectData.project_document ? projectData.project_document.length : 0
       });
 
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch(`${API_URL}/api/projects`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -153,7 +154,7 @@ export const updateProject = createAsyncThunk(
   async ({ projectId, projectData }: { projectId: number; projectData: UpdateProjectData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -180,7 +181,7 @@ export const deleteProject = createAsyncThunk(
   async (projectId: number, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -207,7 +208,7 @@ export const updateProjectStatus = createAsyncThunk(
       const token = localStorage.getItem('token');
       
       // First get the current project data
-      const projectResponse = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+      const projectResponse = await fetch(`${API_URL}/api/projects/${projectId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -221,7 +222,7 @@ export const updateProjectStatus = createAsyncThunk(
       const currentProject = await projectResponse.json();
 
       // Then update with new status
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -251,7 +252,7 @@ export const fetchProjectDocument = createAsyncThunk(
   async (projectId: number, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}/document`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}/document`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -275,7 +276,7 @@ export const deleteProjectDocument = createAsyncThunk(
   async (projectId: number, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}/document`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}/document`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { API_URL } from '../../../api';
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -136,7 +137,7 @@ export const fetchTasks = createAsyncThunk<
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${API_URL}/api/tasks`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -165,7 +166,7 @@ export const fetchTaskById = createAsyncThunk<
   async (taskId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -194,7 +195,7 @@ export const createTask = createAsyncThunk<
   async (taskData, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -226,7 +227,7 @@ export const updateTask = createAsyncThunk<
   async ({ taskId, taskData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -258,7 +259,7 @@ export const deleteTask = createAsyncThunk<
   async (taskId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -295,7 +296,7 @@ export const updateTaskStatus = createAsyncThunk<
       const token = localStorage.getItem('token');
       
       // First get the current task data
-      const taskResponse = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      const taskResponse = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -309,7 +310,7 @@ export const updateTaskStatus = createAsyncThunk<
       const currentTask: Task = await taskResponse.json();
 
       // Then update with new status and progress
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -347,7 +348,7 @@ export const fetchSubTasks = createAsyncThunk<
   async (taskId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/subtasks`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}/subtasks`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -376,7 +377,7 @@ export const createSubTask = createAsyncThunk<
   async ({ taskId, title, description }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}/subtasks`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}/subtasks`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -414,7 +415,7 @@ export const updateSubTask = createAsyncThunk<
   async ({ subTaskId, ...updateData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/subtasks/${subTaskId}`, {
+      const response = await fetch(`${API_URL}/api/subtasks/${subTaskId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -446,7 +447,7 @@ export const deleteSubTask = createAsyncThunk<
   async (subTaskId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/subtasks/${subTaskId}`, {
+      const response = await fetch(`${API_URL}/api/subtasks/${subTaskId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
