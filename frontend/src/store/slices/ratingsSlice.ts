@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { API_URL } from '../../../api';
 
 // Types
 export interface ProjectRating {
@@ -172,7 +173,7 @@ export const deleteProjectRating = createAsyncThunk<
   async ({ projectId, ratingId }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/projects/${projectId}/ratings/${ratingId}`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}/ratings/${ratingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -200,7 +201,7 @@ export const fetchTaskRatings = createAsyncThunk<
   async (taskId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/tasks/${taskId}/ratings`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}/ratings`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -228,7 +229,7 @@ export const addTaskRating = createAsyncThunk<
   async ({ taskId, ratingData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/tasks/${taskId}/ratings`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}/ratings`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -258,7 +259,7 @@ export const deleteTaskRating = createAsyncThunk<
   async ({ taskId, ratingId }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/tasks/${taskId}/ratings/${ratingId}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}/ratings/${ratingId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -289,7 +290,7 @@ export const fetchRatingsDashboard = createAsyncThunk<
       const token = localStorage.getItem('token');
       console.log('DEBUG - Token from localStorage:', token);
       
-      const response = await fetch('/api/ratings/dashboard/summary', {
+      const response = await fetch(`${API_URL}/api/ratings/dashboard/summary`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

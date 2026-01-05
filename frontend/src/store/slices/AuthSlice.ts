@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { API_URL } from '../../../api';
 
 interface User {
   id: number;
@@ -65,7 +66,7 @@ export const validateToken = createAsyncThunk(
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/validate', {
+      const response = await fetch(`${API_URL}/api/auth/validate`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -89,7 +90,7 @@ export const loginUser = createAsyncThunk(
   'auth/login',
   async (credentials: LoginCredentials, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(credentials),
@@ -113,7 +114,7 @@ export const registerUser = createAsyncThunk(
   'auth/register',
   async (userData: RegisterData, { rejectWithValue }) => {
     try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
+      const response = await fetch(`${API_URL}/api/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
@@ -144,7 +145,7 @@ export const getCurrentUser = createAsyncThunk(
         throw new Error('No authentication token');
       }
 
-      const response = await fetch(`http://localhost:5000/api/users/${auth.user?.id}`, {
+      const response = await fetch(`${API_URL}/api/users/${auth.user?.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -176,7 +177,7 @@ export const updateUserProfile = createAsyncThunk(
         throw new Error('No authentication token');
       }
 
-      const response = await fetch(`http://localhost:5000/api/users/${auth.user?.id}`, {
+      const response = await fetch(`${API_URL}/api/users/${auth.user?.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -210,7 +211,7 @@ export const changePassword = createAsyncThunk(
         throw new Error('No authentication token');
       }
 
-      const response = await fetch(`http://localhost:5000/api/users/${auth.user?.id}`, {
+      const response = await fetch(`${API_URL}/api/users/${auth.user?.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -244,7 +245,7 @@ export const deleteUserAccount = createAsyncThunk(
         throw new Error('No authentication token');
       }
 
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${API_URL}/api/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

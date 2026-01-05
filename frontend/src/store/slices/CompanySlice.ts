@@ -1,4 +1,5 @@
 import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { API_URL } from '../../../api';
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -40,7 +41,7 @@ export const fetchCompanies = createAsyncThunk<
   async (_, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/companies', {
+      const response = await fetch(`${API_URL}/api/companies`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -69,7 +70,7 @@ export const fetchCompanyById = createAsyncThunk<
   async (companyId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+      const response = await fetch(`${API_URL}/api/companies/${companyId}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -98,7 +99,7 @@ export const createCompany = createAsyncThunk<
   async (companyData, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/companies', {
+      const response = await fetch(`${API_URL}/api/companies`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -130,7 +131,7 @@ export const updateCompany = createAsyncThunk<
   async ({ companyId, companyData }, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+      const response = await fetch(`${API_URL}/api/companies/${companyId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -162,7 +163,7 @@ export const deleteCompany = createAsyncThunk<
   async (companyId, { rejectWithValue }) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+      const response = await fetch(`${API_URL}/api/companies/${companyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
