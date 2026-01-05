@@ -17,7 +17,6 @@ import {
 } from 'react-icons/fa';
 import styles from './ClientTaskPage.module.css';
 
-// Import ratings functionality
 import {
   fetchTaskRatings,
   addTaskRating,
@@ -27,6 +26,8 @@ import {
   selectTaskRatingByType,
   type TaskRating
 } from '../../store/slices/ratingsSlice';
+
+import { API_URL } from '../../../api.ts';
 
 interface Task {
   id: number;

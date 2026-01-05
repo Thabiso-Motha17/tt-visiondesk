@@ -15,6 +15,7 @@ import {
   FaBuilding
 } from 'react-icons/fa';
 import styles from './UserManagement.module.css';
+import { API_URL } from '../../../api.ts';
 
 interface User {
   id: number;
@@ -73,7 +74,7 @@ const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -101,7 +102,7 @@ const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
       setCompaniesLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/companies', {
+      const response = await fetch(`${API_URL}/api/companies`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${API_URL}/api/users`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -175,7 +176,7 @@ const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/users/${selectedUser.id}`, {
+      const response = await fetch(`${API_URL}/api/users/${selectedUser.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -211,7 +212,7 @@ const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
       const user = users.find(u => u.id === userId);
       if (!user) return;
 
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${API_URL}/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -252,7 +253,7 @@ const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`${API_URL}/api/users/${userId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

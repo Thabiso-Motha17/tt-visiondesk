@@ -16,6 +16,7 @@ import {
   FaMapMarkerAlt
 } from 'react-icons/fa';
 import styles from './CompanyManagement.module.css';
+import { API_URL } from '../../../api.ts';
 
 interface Company {
   id: number;
@@ -59,7 +60,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/companies', {
+      const response = await fetch(`${API_URL}/api/companies`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/companies', {
+      const response = await fetch(`${API_URL}/api/companies`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -121,7 +122,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/companies/${selectedCompany.id}`, {
+      const response = await fetch(`${API_URL}/api/companies/${selectedCompany.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -158,7 +159,7 @@ const CompanyManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/companies/${companyId}`, {
+      const response = await fetch(`${API_URL}/api/companies/${companyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

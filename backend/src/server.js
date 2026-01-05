@@ -2,8 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import pkg from 'pg';
-const { Pool } = pkg;
+import pool from './db.js';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -15,13 +14,7 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT || 5432,
-});
+
 
 const authenticateToken = (req, res, next) => {
   const authHeader = req.headers['authorization'];

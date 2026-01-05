@@ -23,6 +23,7 @@ import TextType from '../../ui/TextType';
 import { MdBusiness } from 'react-icons/md';
 import UserManagement from '../Admin/UserManagement';
 import CompanyManagement from '../Admin/CompanyManagement';
+import { API_URL } from '../../../api.ts';
 
 // Define the ratings types locally since we won't use the slice
 interface ProjectRating {
@@ -112,10 +113,10 @@ const ManagerDashboard: React.FC = () => {
       
       // Test with different URLs to find the correct one
       const urlsToTry = [
-        'http://localhost:5000/api/ratings/dashboard',
-        '/api/ratings/dashboard',
-        'http://localhost:5000/api/ratings/dashboard/summary',
-        '/api/ratings/dashboard/summary',
+        `${API_URL}/api/ratings/dashboard`,
+        `${API_URL}/api/ratings/dashboard`,
+        `${API_URL}/api/ratings/dashboard/summary`,
+        `${API_URL}/api/ratings/dashboard/summary`,
       ];
       
       let response = null;

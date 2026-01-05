@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useEffect, useState, type JSX } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
@@ -19,7 +17,6 @@ import {
   FaRegStar,
   FaTimes
 } from 'react-icons/fa';
-import TextType from '../../ui/TextType';
 import styles from './ClientDashboard.module.css';
 
 // Import ratings slice actions and selectors
@@ -184,13 +181,7 @@ const ClientDashboard: React.FC = () => {
     <div className={styles.clientDashboard}>
       <div className={styles.dashboardHeader}>
         <h1>Client Dashboard</h1>
-        <TextType
-          text={["Welcome Client", "Track your project progress"]}
-          typingSpeed={75}
-          pauseDuration={1500}
-          showCursor={true}
-          cursorCharacter="|"
-        />
+        <p>Welcome Client - Track your project progress</p>
       </div>
 
       {/* Client Stats */}

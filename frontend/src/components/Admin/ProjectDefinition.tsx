@@ -12,6 +12,7 @@ import {
   FaCheckCircle,
 } from 'react-icons/fa';
 import styles from './ProjectDefinition.module.css';
+import { API_URL } from '../../../api.ts';
 
 interface Project {
   id: number;
@@ -56,7 +57,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch(`${API_URL}/api/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -81,7 +82,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   // Fetch companies from API
   const fetchCompanies = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/companies', {
+      const response = await fetch(`${API_URL}/api/companies`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -109,7 +110,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch(`${API_URL}/api/projects`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -145,7 +146,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/projects/${editingProject.id}`, {
+      const response = await fetch(`${API_URL}/api/projects/${editingProject.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -183,7 +184,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/projects/${projectId}`, {
+      const response = await fetch(`${API_URL}/api/projects/${projectId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -205,7 +206,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const handleCreateMilestone = async (projectId: number, milestoneData: any) => {
     try {
-      const response = await fetch('http://localhost:5000/api/milestones', {
+      const response = await fetch(`${API_URL}/api/milestones`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -232,7 +233,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const handleUpdateMilestone = async (milestoneId: number, milestoneData: any) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/milestones/${milestoneId}`, {
+      const response = await fetch(`${API_URL}/api/milestones/${milestoneId}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -255,7 +256,7 @@ const ProjectDefinition: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
   const handleDeleteMilestone = async (milestoneId: number) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/milestones/${milestoneId}`, {
+      const response = await fetch(`${API_URL}/api/milestones/${milestoneId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

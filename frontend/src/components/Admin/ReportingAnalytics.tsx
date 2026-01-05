@@ -16,6 +16,7 @@ import {
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
 import styles from './ReportingAnalytics.module.css';
+import { API_URL } from '../../../api.ts';
 
 interface Project {
   id: number;
@@ -71,7 +72,7 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setError(null);
 
       // Fetch projects
-      const projectsResponse = await fetch('http://localhost:5000/api/projects', {
+      const projectsResponse = await fetch(`${API_URL}/api/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -85,7 +86,7 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setProjects(projectsData);
 
       // Fetch tasks
-      const tasksResponse = await fetch('http://localhost:5000/api/tasks', {
+      const tasksResponse = await fetch(`${API_URL}/api/tasks`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -99,7 +100,7 @@ const ReportingAnalytics: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setTasks(tasksData);
 
       // Fetch team members (developers and managers)
-      const usersResponse = await fetch('http://localhost:5000/api/users', {
+      const usersResponse = await fetch(`${API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
