@@ -11,6 +11,7 @@ import {
   FaCalendar
 } from 'react-icons/fa';
 import styles from './WorkloadMonitoring.module.css';
+import { API_URL } from '../../../api.ts';
 
 interface DeveloperWorkload {
   id: number;
@@ -66,7 +67,7 @@ const WorkloadMonitoring: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setError(null);
 
       // Fetch all developers
-      const usersResponse = await fetch('http://localhost:5000/api/users', {
+      const usersResponse = await fetch(`${API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -84,7 +85,7 @@ const WorkloadMonitoring: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       );
 
       // Fetch all tasks
-      const tasksResponse = await fetch('http://localhost:5000/api/tasks', {
+      const tasksResponse = await fetch(`${API_URL}/api/tasks`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -97,7 +98,7 @@ const WorkloadMonitoring: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const tasksData: Task[] = await tasksResponse.json();
 
       // Fetch projects for project names
-      const projectsResponse = await fetch('http://localhost:5000/api/projects', {
+      const projectsResponse = await fetch(`${API_URL}/api/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

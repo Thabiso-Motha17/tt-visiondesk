@@ -17,6 +17,7 @@ import {
   FaTimes
 } from 'react-icons/fa';
 import styles from './AdminTaskPage.module.css';
+import { API_URL } from '../../../api.ts';
 
 interface Task {
   id: number;
@@ -78,7 +79,7 @@ const AdminTaskPage: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${API_URL}/api/tasks`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -102,7 +103,7 @@ const AdminTaskPage: React.FC = () => {
 
   const fetchProjects = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/projects', {
+      const response = await fetch(`${API_URL}/api/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -123,7 +124,7 @@ const AdminTaskPage: React.FC = () => {
 
   const fetchUsers = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/users', {
+      const response = await fetch(`${API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -157,7 +158,7 @@ const AdminTaskPage: React.FC = () => {
     try {
       setError(null);
       
-      const response = await fetch('http://localhost:5000/api/tasks', {
+      const response = await fetch(`${API_URL}/api/tasks`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -191,7 +192,7 @@ const AdminTaskPage: React.FC = () => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/tasks/${editingTask.id}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${editingTask.id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -226,7 +227,7 @@ const AdminTaskPage: React.FC = () => {
     try {
       setError(null);
       
-      const response = await fetch(`http://localhost:5000/api/tasks/${taskId}`, {
+      const response = await fetch(`${API_URL}/api/tasks/${taskId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

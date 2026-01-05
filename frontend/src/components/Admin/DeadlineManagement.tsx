@@ -17,6 +17,7 @@ import {
   FaSave
 } from 'react-icons/fa';
 import styles from './DeadlineManagement.module.css';
+import { API_URL } from '../../../api.ts';
 
 interface Deadline {
   id: number;
@@ -95,8 +96,8 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setLoading(true);
       setError(null);
 
-      
-      const projectsResponse = await fetch('http://localhost:5000/api/projects', {
+
+      const projectsResponse = await fetch(`${API_URL}/api/projects`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -108,7 +109,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       setProjects(projectsData);
 
       // Fetch tasks
-      const tasksResponse = await fetch('http://localhost:5000/api/tasks', {
+      const tasksResponse = await fetch(`${API_URL}/api/tasks`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -119,8 +120,8 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const tasksData: Task[] = await tasksResponse.json();
       setTasks(tasksData);
 
-     
-      const milestonesResponse = await fetch('http://localhost:5000/api/milestones', {
+
+      const milestonesResponse = await fetch(`${API_URL}/api/milestones`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -130,7 +131,7 @@ const DeadlineManagement: React.FC<{ onBack: () => void }> = ({ onBack }) => {
       const milestonesData: Milestone[] = milestonesResponse.ok ? await milestonesResponse.json() : [];
       setMilestones(milestonesData);
 
-      const usersResponse = await fetch('http://localhost:5000/api/users', {
+      const usersResponse = await fetch(`${API_URL}/api/users`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

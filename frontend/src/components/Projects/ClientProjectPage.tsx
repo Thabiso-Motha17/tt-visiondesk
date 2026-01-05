@@ -34,6 +34,8 @@ import {
   type ProjectRating
 } from '../../store/slices/ratingsSlice';
 
+import { API_URL } from '../../../api.ts';
+
 interface Project {
   id: number;
   name: string;
@@ -186,7 +188,7 @@ const ClientProjectPage: React.FC = () => {
   const handleDownloadDocument = async (project: Project) => {
   try {
     const token = localStorage.getItem('token');
-    const response = await fetch(`http://localhost:5000/api/projects/${project.id}/download`, {
+    const response = await fetch(`${API_URL}/api/projects/${project.id}/download`, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${token}`,
