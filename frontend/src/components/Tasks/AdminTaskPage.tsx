@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
-import type { RootState } from '../../store/store.ts';
+import type { RootState } from '../../store/store';
 import { 
   FaPlus, 
   FaEdit, 
@@ -17,7 +17,7 @@ import {
   FaTimes
 } from 'react-icons/fa';
 import styles from './AdminTaskPage.module.css';
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface Task {
   id: number;
@@ -338,6 +338,13 @@ const AdminTaskPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className={styles.errorMessage}>
+          <p>{error}</p>
+        </div>
+      )}
 
       {/* Filters and Search */}
       <div className={styles.filtersSection}>

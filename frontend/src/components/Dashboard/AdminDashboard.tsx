@@ -13,8 +13,8 @@ import CompanyManagement from '../Admin/CompanyManagement';
 import TextType from '../../ui/TextType';
 
 const AdminDashboard: React.FC = () => {
-  const { tasks, loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
-  const { projects, loading: projectsLoading } = useSelector((state: RootState) => state.projects);
+  const {  loading: tasksLoading } = useSelector((state: RootState) => state.tasks);
+  const {  loading: projectsLoading } = useSelector((state: RootState) => state.projects);
   const dispatch = useDispatch();
 
   const [activeView, setActiveView] = useState<

@@ -203,6 +203,7 @@
   text-transform: uppercase;
   background: linear-gradient(to right, #fff, var(--primary-color));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
 }

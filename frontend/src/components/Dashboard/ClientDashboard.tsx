@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type JSX } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { fetchProjects } from '../../store/slices/projectSlice';
@@ -9,11 +9,7 @@ import {
   FaClock, 
   FaCheckCircle,
   FaBell,
-  FaFileAlt,
-  FaDownload,
   FaStar,
-  FaEdit,
-  FaTrash,
   FaRegStar,
   FaTimes
 } from 'react-icons/fa';
@@ -356,7 +352,6 @@ interface ProjectCardProps {
 const ProjectCard: React.FC<ProjectCardProps> = ({
   project,
   onRequestUpdate,
-  onGenerateReport,
   onRateProject,
   userId
 }) => {
@@ -855,7 +850,7 @@ const ProgressTimelineChart: React.FC<ProgressTimelineChartProps> = ({ projects 
   return (
     <div className={styles.chartContainer}>
       <div className={styles.timelineChart}>
-        {projects.slice(0, 5).map((project, index) => (
+        {projects.slice(0, 5).map((project) => (
           <div key={project.id} className={styles.timelineItem}>
             <div className={styles.timelineProject}>
               <span className={styles.timelineName}>{project.name}</span>

@@ -775,11 +775,6 @@
   font-size: 1.1rem;
 }
 
-/* Rating Color Helper */
-.getRatingColor {
-  /* This is a helper class - use inline styles for dynamic colors */
-}
-
 /* Feature Card for Ratings */
 .featureCard .featureIcon[data-icon="star"] {
   color: rgb(12, 121, 93);

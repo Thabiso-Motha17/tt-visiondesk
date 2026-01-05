@@ -11,7 +11,7 @@ import {
   FaCalendar
 } from 'react-icons/fa';
 import styles from './WorkloadMonitoring.module.css';
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface DeveloperWorkload {
   id: number;
@@ -55,7 +55,7 @@ interface Project {
 }
 
 const WorkloadMonitoring: React.FC<{ onBack: () => void }> = ({ onBack }) => {
-  const { user, token } = useSelector((state: RootState) => state.auth);
+  const { token } = useSelector((state: RootState) => state.auth);
   const [developers, setDevelopers] = useState<DeveloperWorkload[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -204,6 +204,8 @@ const WorkloadMonitoring: React.FC<{ onBack: () => void }> = ({ onBack }) => {
   };
 
   if (loading) return <div className={styles['loading']}>Loading Workload Data...</div>;
+
+  if (error) return <div className={styles['error']}>Error: {error}</div>;
 
   return (
     <div className={styles['workload-monitoring']}>

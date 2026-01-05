@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { 
   FaUsers, 
@@ -15,7 +15,7 @@ import {
   FaBuilding
 } from 'react-icons/fa';
 import styles from './UserManagement.module.css';
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface User {
   id: number;
@@ -55,7 +55,6 @@ interface UpdateUserData {
 
 const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
   const { user: currentUser, token } = useSelector((state: RootState) => state.auth);
-  const dispatch = useDispatch();
   const [users, setUsers] = useState<User[]>([]);
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -320,6 +319,12 @@ const UserManagement: React.FC<{onBack: () => void}> = ({ onBack }) => {
           </button>
         </div>
       </div>
+
+      {error && (
+        <div className={styles['error-banner']}>
+          {error}
+        </div>
+      )}
 
       {/* User Statistics */}
       <div className={styles['user-stats-grid']}>

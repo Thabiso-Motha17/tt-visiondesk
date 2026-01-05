@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { 
@@ -16,7 +16,7 @@ import {
   FaMapMarkerAlt
 } from 'react-icons/fa';
 import styles from './CompanyManagement.module.css';
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface Company {
   id: number;

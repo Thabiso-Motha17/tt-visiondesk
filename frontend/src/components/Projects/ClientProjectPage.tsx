@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type JSX } from 'react';
+import { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { fetchProjects } from '../../store/slices/projectSlice';
@@ -19,7 +19,6 @@ import {
   FaRegStar,
   FaPaperclip,
   FaFilePdf,
-  FaTrash,
   FaUpload
 } from 'react-icons/fa';
 import styles from './ClientProjectPage.module.css';
@@ -31,10 +30,9 @@ import {
   selectProjectRatings,
   selectProjectAverageRating,
   selectUserProjectRating,
-  type ProjectRating
 } from '../../store/slices/ratingsSlice';
 
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface Project {
   id: number;
@@ -667,7 +665,6 @@ const ProjectDetailsModal: React.FC<ProjectDetailsModalProps> = ({
   project,
   tasks,
   onClose,
-  onDownloadReport,
   onRequestUpdate,
   onRateProject,
   onViewDocument,

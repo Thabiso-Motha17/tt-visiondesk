@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store/store';
 import { 
@@ -17,7 +17,7 @@ import {
   FaSave
 } from 'react-icons/fa';
 import styles from './DeadlineManagement.module.css';
-import { API_URL } from '../../../api.ts';
+import { API_URL } from '../../../api';
 
 interface Deadline {
   id: number;
@@ -897,10 +897,7 @@ interface EditDeadlineModalProps {
 }
 
 const EditDeadlineModal: React.FC<EditDeadlineModalProps> = ({ 
-  deadline, 
-  projects, 
-  tasks, 
-  milestones, 
+  deadline,  
   users, 
   onClose, 
   onSubmit 
