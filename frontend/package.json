@@ -8,13 +8,15 @@
     "build": "npm run install-deps && vite build",
     "install-deps": "npm install --include=dev",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "start": "serve dist -s"
   },
   "dependencies": {
     "@reduxjs/toolkit": "^2.10.1",
     "@types/jspdf": "^1.3.3",
     "gsap": "^3.13.0",
     "jspdf": "^4.0.0",
+    "serve": "^14.2.1",
     "react": "^19.2.3",
     "react-icons": "^5.5.0",
     "react-redux": "^9.2.0",
