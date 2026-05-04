@@ -132,7 +132,7 @@ const LandingPage = () => {
             </button>
             
             <div className="login-modal-header">
-              <h1 className="login-modal-title">VisionDesk</h1>
+              <h1 className="login-modal-title">VisionDesk </h1>
               <p className="login-modal-subtitle">Progress tracking made easy</p>
             </div>
             
