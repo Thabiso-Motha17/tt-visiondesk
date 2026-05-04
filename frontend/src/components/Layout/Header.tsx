@@ -98,7 +98,7 @@ const Header: React.FC = () => {
     <>
       <header className={styles.header}>
         <div className={styles.headerBrand}>
-          <h1 className={styles.brandTitle}>T&T VisionDesk</h1>
+          <h1 className={styles.brandTitle}>VisionDesk</h1>
           <span className={styles.brandSlogan}>progress tracking made easy</span>
         </div>
 

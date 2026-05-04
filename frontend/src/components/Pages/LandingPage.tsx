@@ -132,7 +132,7 @@ const LandingPage = () => {
             </button>
             
             <div className="login-modal-header">
-              <h1 className="login-modal-title">T&T VisionDesk</h1>
+              <h1 className="login-modal-title">VisionDesk</h1>
               <p className="login-modal-subtitle">Progress tracking made easy</p>
             </div>
             
@@ -200,22 +200,6 @@ const LandingPage = () => {
                 )}
               </button>
             </form>
-
-            <div className="demo-accounts">
-              <h3>Demo Accounts:</h3>
-              <div className="demo-account-item">
-                <strong>Admin:</strong> admin@visiondesk.com / password
-              </div>
-              <div className="demo-account-item">
-                <strong>Manager:</strong> manager@visiondesk.com / password
-              </div>
-              <div className="demo-account-item">
-                <strong>Employee:</strong> dev@visiondesk.com / password
-              </div>
-              <div className="demo-account-item">
-                <strong>Client:</strong> client@techsolutions.com / password
-              </div>
-            </div>
           </div>
         </div>
       )}
@@ -224,7 +208,7 @@ const LandingPage = () => {
       <header className={`header ${scrolled ? 'scrolled' : ''}`}>
         <div className="container">
           <div className="logo">
-            <h2>T&T VisionDesk</h2>
+            <h2>VisionDesk</h2>
           </div>
           <nav className={`nav ${menuOpen ? 'nav-open' : ''}`}>
             <ul>
@@ -277,7 +261,7 @@ const LandingPage = () => {
         <div className="hero-content-container">
           <div className="container">
             <div className="hero-content">
-              <h1>T&T GROUP</h1>
+              <h1>VisionDesk</h1>
               <p className="hero-subtitle">CLIENT NEEDS IST</p>
               <div className="hero-buttons">
                 <button 
@@ -306,13 +290,13 @@ const LandingPage = () => {
       <section id="about" className="about">
         <div className="container">
           <div className="section-header">
-            <h2>About T&T Group</h2>
+            <h2>About VisionDesk</h2>
             <div className="divider"></div>
           </div>
           <div className="about-content">
             <div className="about-text">
               <p>
-                T&T Group is a premier consulting firm dedicated to understanding and 
+                VisionDesk is a premier consulting firm dedicated to understanding and 
                 fulfilling our clients' unique requirements. With years of industry 
                 experience, we've built a reputation for excellence and reliability.
               </p>
@@ -485,7 +469,7 @@ const LandingPage = () => {
         <div className="container">
           <div className="footer-content">
             <div className="footer-section">
-              <h3>T&T GROUP</h3>
+              <h3>VisionDesk</h3>
               <p>Delivering exceptional solutions that meet our clients' unique needs and drive sustainable success.</p>
               <div className="social-links">
                 <a href="#" aria-label="LinkedIn">LinkedIn</a>
@@ -521,7 +505,7 @@ const LandingPage = () => {
             </div>
           </div>
           <div className="footer-bottom">
-            <p>&copy; {new Date().getFullYear()} T&T Group. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} VisionDesk. All rights reserved.</p>
           </div>
         </div>
       </footer>
